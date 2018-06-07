@@ -1,0 +1,72 @@
+#%RAML 1.0 Library
+uses:
+  MultilingualText: MultilingualText.raml
+
+types:
+
+  # Se https://wiki.ssb.no/pages/viewpage.action?pageId=95715768
+  # og https://wiki.ssb.no/display/MAS2/LDM+-+versjonering+av+metadata
+
+  IdentifiableArtefact:
+    description: IdentifiableArtefact is reusable abstract object (type). All identifiable objects inherits all attributes from this object (type).
+    properties:
+      id:
+        type: string
+        description: The global unique identifier (GUID) of the information object assigned by the owner agency.
+        displayName: Unik identifikator (GUID)
+      name:
+        #TODO: Skal denne være obligatorsk? Er det mulig å sette et navn på alle objekter (eventuelt benytte ID-guid også som navn?).
+        type: MultilingualText.MultilingualText[]
+        description: A term wich designates a Concept, in this case an information object. The identifying name will be the preferrred designation, e.g. DataSet.name PersonIncomeData
+        displayName: Navn
+      description:
+        type: MultilingualText.MultilingualText[]
+        description: The description of the information object
+        displayName: Beskrivelse
+      administrativeStatus:
+        type: string
+        description: Indicator for access to an item.
+        displayName: Administrativ status
+        #TODO: Foreløig en ENUM, men bør trolig flyttes til KLASS!
+        enum:
+          - DRAFT
+          - INTERNAL
+          - OPEN
+          - DEPRECATED
+      version:
+        type: string
+        description: Formal versioning of the information object. The version designator of the information object assigned by the owner agency. "major.minor.patch", e.g. "1.12.5".
+        displayName: Versjon
+        default: 0.1.0
+      versionRationale?:
+        type: MultilingualText.MultilingualText[]
+        description: The reason for making this version of the information object.
+        displayName: Begrunnelse/beskrivelse for denne versjonen av objektet
+      versionValidFrom:
+        type: datetime
+        description: The date on which the current version of the infomation object is effective or valid.
+        displayName: Versjon gyldig fom. dato
+      objectValidFrom:
+        type: datetime
+        description: The date on which the information object is effective or valid. Set this date only once (constant). The same date for all versions of this information object.
+        displayName: Objekt gyldig fom. dato
+      objectValidUntil?:
+        type: datetime
+        description: The date on which the information object is no longer effective or valid.
+        displayName: Objekt gylid tom. dato
+      objectLastUpdatedDate?:
+        type: datetime
+        description: The date on which the object was last updated.
+        displayName: Endret dato
+      objectLastUpdatedBy?:
+        type: string
+        description: Last updated by
+        displayName: Endret av
+      objectCreatedDate:
+        type: datetime
+        description: The date on which the information object was created by the owner agency (not necessarily the same date as "versionValidFrom"). Set this date only once (constant). The same date for all versions of this information object.
+        displayName: Objekt opprettet dato
+      objectCreatedBy:
+        type: string
+        description: Information object created by.
+        displayName: Objekt opprettet av

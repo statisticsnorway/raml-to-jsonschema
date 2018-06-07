@@ -1,0 +1,128 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>no.ssb.raml</groupId>
+    <artifactId>raml-to-jsonschema</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>RAML to JSON Schema</name>
+
+    <properties>
+        <java.version>10</java.version>
+        <module.build.sourceEncoding>UTF-8</module.build.sourceEncoding>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+
+        <gcp.gcr.region>eu.gcr.io</gcp.gcr.region>
+        <gcp.project.name>p2-utvikling</gcp.project.name>
+        <docker.image>raml-to-jsonschema</docker.image>
+
+        <logback.version>1.2.3</logback.version>
+        <testng.version>6.14.3</testng.version>
+        <raml-parser-2.version>1.0.22</raml-parser-2.version>
+    </properties>
+
+    <scm>
+        <connection>scm:git:git://github.com/statisticsnorway/raml-to-jsonschema.git</connection>
+        <developerConnection>scm:git:git@github.com:statisticsnorway/raml-to-jsonschema.git</developerConnection>
+    </scm>
+
+    <repositories>
+        <repository>
+            <id>mod-p2</id>
+            <name>MOD P2</name>
+            <url>https://artifakt.ssbmod.net/repository/maven-public/</url>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>mod-p2-releases</id>
+            <name>MOD P2 Releases</name>
+            <url>https://artifakt.ssbmod.net/repository/p2-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>mod-p2-snapshots</id>
+            <name>MOD P2 Snapshots</name>
+            <url>https://artifakt.ssbmod.net/repository/p2-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.raml</groupId>
+            <artifactId>raml-parser-2</artifactId>
+            <version>${raml-parser-2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.7.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <encoding>${module.build.sourceEncoding}</encoding>
+                    <meminitial>64m</meminitial>
+                    <maxmem>512m</maxmem>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <transformers>
+                        <transformer
+                                implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <mainClass>no.ssb.raml.Main</mainClass>
+                        </transformer>
+                    </transformers>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.19.1</version>
+                <!-- workaround for: https://issues.jboss.org/browse/UNDERTOW-1355 -->
+                <configuration>
+                    <argLine>
+                        --add-modules=java.xml.bind
+                        --add-opens=java.base/java.lang=ALL-UNNAMED
+                        --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+                        --illegal-access=deny
+                    </argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
