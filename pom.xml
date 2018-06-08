@@ -10,7 +10,7 @@
     <name>RAML to JSON Schema</name>
 
     <properties>
-        <java.version>10</java.version>
+        <java.version>1.8</java.version>
         <module.build.sourceEncoding>UTF-8</module.build.sourceEncoding>
         <maven.javadoc.skip>true</maven.javadoc.skip>
 
@@ -115,10 +115,6 @@
                 <!-- workaround for: https://issues.jboss.org/browse/UNDERTOW-1355 -->
                 <configuration>
                     <argLine>
-                        --add-modules=java.xml.bind
-                        --add-opens=java.base/java.lang=ALL-UNNAMED
-                        --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
-                        --illegal-access=deny
                     </argLine>
                 </configuration>
             </plugin>
