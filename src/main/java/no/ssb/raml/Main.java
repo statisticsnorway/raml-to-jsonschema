@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 public class Main {
 
     private static String printUsage() {
-        return String.format("Usage: java raml-to-jsonschema-1.0-SNAPSHOT.jar OUTFOLDER FILE|FOLDER [FILE|FOLDER]...%n"
+        return String.format("Usage: java raml-to-jsonschema.jar OUTFOLDER FILE|FOLDER [FILE|FOLDER]...%n"
                 + "Convert all raml FILE(s) and all raml files in FOLDER(s) to JSON Schema and put in OUTFOLDER.%n%n");
     }
 
