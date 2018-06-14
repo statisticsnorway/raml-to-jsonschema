@@ -1,0 +1,39 @@
+<settings xmlns="http://maven.apache.org/POM/4.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <localRepository/>
+    <interactiveMode/>
+    <usePluginRegistry/>
+    <offline/>
+    <pluginGroups/>
+    <servers>
+        <server>
+            <id>mod-p2</id>
+            <username>${env.NEXUS_P2_USERNAME}</username>
+            <password>${env.NEXUS_P2_PASSWORD}</password>
+        </server>
+        <server>
+            <id>mod-p2-releases</id>
+            <username>${env.NEXUS_P2_USERNAME}</username>
+            <password>${env.NEXUS_P2_PASSWORD}</password>
+        </server>
+        <server>
+            <id>mod-p2-snapshots</id>
+            <username>${env.NEXUS_P2_USERNAME}</username>
+            <password>${env.NEXUS_P2_PASSWORD}</password>
+        </server>
+    </servers>
+    <mirrors>
+        <mirror>
+            <id>mod-p2</id>
+            <url>https://artifakt.ssbmod.net/repository/maven-public/</url>
+            <mirrorOf>*</mirrorOf>
+        </mirror>
+    </mirrors>
+    <proxies/>
+    <profiles/>
+    <activeProfiles/>
+</settings>
+
