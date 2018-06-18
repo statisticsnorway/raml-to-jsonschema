@@ -74,14 +74,24 @@ public class Main {
                 continue;
             }
             if (file.isFile()) {
-                convertRamlToJsonSchema(outFolderPath, arg);
+                try {
+                    convertRamlToJsonSchema(outFolderPath, arg);
+                } catch (RuntimeException e) {
+                    System.err.println("FILE: " + arg);
+                    throw e;
+                }
             } else {
                 // directory
                 Pattern endsWithRamlPattern = Pattern.compile("(.*)[.][Rr][Aa][Mm][Ll]");
                 try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(arg))) {
                     stream.forEach(p -> {
                         if (endsWithRamlPattern.matcher(p.toString()).matches()) {
-                            convertRamlToJsonSchema(outFolderPath, p.toString());
+                            try {
+                                convertRamlToJsonSchema(outFolderPath, p.toString());
+                            } catch (RuntimeException e) {
+                                System.err.println("FILE: " + p.toString());
+                                throw e;
+                            }
                         }
                     });
                 }
@@ -103,11 +113,9 @@ public class Main {
                 writer.write(prettyJson);
                 writer.flush();
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                return;
+                throw new RuntimeException(e);
             } catch (IOException e) {
-                e.printStackTrace();
-                return;
+                throw new RuntimeException(e);
             }
         }
     }
