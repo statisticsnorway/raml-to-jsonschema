@@ -33,6 +33,7 @@ public class RAMLJsonSchema04DefinitionBuilder {
         RamlModelResult ramlModelResult = new RamlModelBuilder().buildApi(resourcePath);
         if (ramlModelResult.hasErrors()) {
             for (ValidationResult validationResult : ramlModelResult.getValidationResults()) {
+                System.err.println(validationResult.getPath());
                 System.err.println(validationResult.getMessage());
             }
             throw new RuntimeException("Unable to create RAML Specification");
