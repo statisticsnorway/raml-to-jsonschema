@@ -100,23 +100,33 @@ public class Main {
 
             } else {
                 // directory
-                Pattern endsWithRamlPattern = Pattern.compile("(.*)[.][Rr][Aa][Mm][Ll]");
-                try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(arg))) {
-                    stream.forEach(p -> {
-                        if (endsWithRamlPattern.matcher(p.toString()).matches()) {
-                            try {
-                                String finalJsonPlainString = convertRamlToPlainJson(p.toString());
-                                convertRamlToJsonSchema(outFolderPath, p.toString(), finalJsonPlainString);
-                            } catch (RuntimeException e) {
-                                System.err.println("FILE: " + p.toString());
-                                throw e;
-                            }
-                        }
-                    });
-                }
+                convertDirectorySchemas(outFolderPath, arg);
             }
         }
         return "";
+    }
+
+    private static void convertDirectorySchemas(Path outFolderPath, String arg) throws IOException {
+        Pattern endsWithRamlPattern = Pattern.compile("(.*)[.][Rr][Aa][Mm][Ll]");
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(arg))) {
+            stream.forEach(p -> {
+                if (endsWithRamlPattern.matcher(p.toString()).matches()) {
+                    try {
+                        String finalJsonPlainString = convertRamlToPlainJson(p.toString());
+                        convertRamlToJsonSchema(outFolderPath, p.toString(), finalJsonPlainString);
+                    } catch (RuntimeException e) {
+                        System.err.println("FILE: " + p.toString());
+                        throw e;
+                    }
+                }else{
+                    try {
+                        convertDirectorySchemas(outFolderPath, p.toString());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
     }
 
     private static String convertRamlToPlainJson(String ramlFile) {
