@@ -175,8 +175,16 @@ public class Main {
 
         String domainNameObject = JsonPath.read(jsonSchema, "$.$ref").toString();
         String domainName = domainNameObject.substring(domainNameObject.lastIndexOf("/") + 1);
+        LinkedHashMap domainPropertiesPlainJson = new LinkedHashMap();
+        String temp = "";
 
-        LinkedHashMap domainPropertiesPlainJson = JsonPath.read(plainJsonDocument, "$.types."+domainName+".properties");
+        LinkedHashMap parsedJson = JsonPath.read(plainJsonDocument, "$.types." + domainName);
+        if (parsedJson.containsKey("properties") &&
+                !(JsonPath.read(plainJsonDocument, "$.types." + domainName + ".properties").equals(""))) {
+            domainPropertiesPlainJson = JsonPath.read(plainJsonDocument, "$.types." + domainName + ".properties");
+
+        }
+
         LinkedHashMap domainPropertiesJsonSchema = JsonPath.read(jsonSchemaDocument, "$.definitions." + domainName + ".properties");
 
         DocumentContext modifiedJsonSchema = JsonPath.using(Configuration.defaultConfiguration()).parse(jsonSchema);
