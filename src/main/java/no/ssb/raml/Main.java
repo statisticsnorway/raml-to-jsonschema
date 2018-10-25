@@ -185,14 +185,14 @@ public class Main {
         String abstractType = "";
 
         LinkedHashMap plainJsonProperties = JsonPath.read(plainJsonDocument, "$.types." + domainName);
-        if(plainJsonProperties.containsKey("type")){
+        if (plainJsonProperties.containsKey("type")) {
 
             Object domainType = JsonPath.read(plainJsonDocument, "$.types." + domainName + ".type");
-            if(domainType.getClass() == String.class){
+            if (domainType.getClass() == String.class) {
                 abstractType = domainType.toString().substring(domainType.toString().lastIndexOf(".") + 1);
-            }else if(domainType.getClass() == JSONArray.class){
+            } else if (domainType.getClass() == JSONArray.class) {
                 JSONArray jsonArray = new JSONArray();
-                jsonArray.addAll((List)domainType);
+                jsonArray.addAll((List) domainType);
                 String domainTypeValue = jsonArray.get(0).toString();
                 abstractType = domainTypeValue.substring(domainTypeValue.lastIndexOf(".") + 1);
             }
@@ -201,7 +201,6 @@ public class Main {
             try (Stream<Path> schemaFiles = Files.list(Paths.get(outFolderPath.toUri()))) {
                 String finalAbstractType = abstractType;
                 schemaFiles.forEach((file) -> {
-                    System.out.println(file.getFileName().toString());
                     if (file.getFileName().toString().equalsIgnoreCase(finalAbstractType + ".json")) {
                         String abstractJsonSchema = "";
                         try {
@@ -231,8 +230,18 @@ public class Main {
             String propertyText = property.toString();
             propertyText = propertyText.replaceAll("[?]", "");
             if (domainPropertiesJsonSchema.containsKey(propertyText)) {
+                LinkedHashMap plainJsonProperties = (LinkedHashMap) value;
+                LinkedHashMap jsonSchemaProperties = (LinkedHashMap) domainPropertiesJsonSchema.get(propertyText);
+
+                plainJsonProperties.forEach((propertyType, propertyValue) -> {
+                    if (!jsonSchemaProperties.containsKey(propertyType)) {
+                        jsonSchemaProperties.put(propertyType, propertyValue);
+                    }
+                });
+
+                System.out.println(jsonSchemaProperties);
                 String jsonPath = "$..definitions." + domainName + ".properties." + propertyText;
-                modifiedJsonSchema.set(jsonPath, value);
+                modifiedJsonSchema.set(jsonPath, jsonSchemaProperties);
             }
         });
     }
