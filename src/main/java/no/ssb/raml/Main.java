@@ -14,8 +14,11 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -43,14 +46,18 @@ public class Main {
     }
 
     static String convertSchemas(String[] args) throws IOException {
+        Path jsonFilesLocation = Paths.get("jsonFiles");
         String jsonText = "";
 
         if (args.length < 2) {
             return printUsage();
         }
-
         Path outFolderPath = Paths.get(args[0]);
         File outFolder = outFolderPath.toFile();
+        Path schemaFolderPath = Paths.get(args[1]);
+
+        createPlainJsonFromRaml(schemaFolderPath, jsonFilesLocation);
+
         if (!outFolder.exists()) {
             boolean created = outFolder.mkdirs();
             if (!created) {
@@ -85,12 +92,6 @@ public class Main {
                 System.err.format("File or folder '%s' cannot be read.\n", arg);
                 continue;
             }
-
-            String schemaLocation = "C:\\Users\\rpk\\Projects\\ssb-im\\schemas";
-            Path jsonFilesLocation = Paths.get("jsonFiles");
-
-            createPlainJsonFromRaml(schemaLocation, jsonFilesLocation);
-
             if (file.isFile()) {
                 try {
                     jsonText = convertRamlToPlainJson(file.toString());
@@ -100,37 +101,55 @@ public class Main {
                     throw e;
                 }
             } else {
-                convertDirectorySchemas(outFolderPath, jsonFilesLocation, arg);
+                parseDirectoryFiles(outFolderPath, jsonFilesLocation, arg);
             }
         }
+        deleteFiles(jsonFilesLocation);
         return "";
     }
 
-
-    private static void convertDirectorySchemas(Path outFolderPath, Path jsonFilesPath, String arg) throws IOException {
+    /**
+     * To parse the Raml files. Convert each Raml file to Json schema and perform merging of missing properties
+     * @param outFolderPath: Location where Json schemas will be created
+     * @param jsonFilesPath: Location where plain json files are stored to compare missing properties
+     * @param arg:
+     * @throws IOException
+     */
+    private static void parseDirectoryFiles(Path outFolderPath, Path jsonFilesPath, String arg) throws IOException {
         Pattern endsWithRamlPattern = Pattern.compile("(.*)[.][Rr][Aa][Mm][Ll]");
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(arg))) {
             stream.forEach(p -> {
-                if (endsWithRamlPattern.matcher(p.toString()).matches()) {
-                    try {
-                        String finalJsonPlainString = convertRamlToPlainJson(p.toString());
-                        convertRamlToJsonSchema(outFolderPath, jsonFilesPath, p.toString(), finalJsonPlainString);
-                    } catch (RuntimeException e) {
-                        System.err.println("FILE: " + p.toString());
-                        throw e;
-                    }
-                } else {
-                    try {
-                        convertDirectorySchemas(outFolderPath, jsonFilesPath, p.toString());
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                if (!p.getFileName().toString().equalsIgnoreCase("todo")) {
+                    if (endsWithRamlPattern.matcher(p.toString()).matches()) {
+                        try {
+                            String finalJsonPlainString = convertRamlToPlainJson(p.toString());
+                            convertRamlToJsonSchema(outFolderPath, jsonFilesPath, p.toString(), finalJsonPlainString);
+                        } catch (RuntimeException e) {
+                            System.err.println("FILE: " + p.toString());
+                            throw e;
+                        }
+                    } else {
+                        try {
+                            parseDirectoryFiles(outFolderPath, jsonFilesPath, p.toString());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             });
         }
     }
 
-    private static String convertRamlToJsonSchema(Path outFolderPath, Path jsonFilesPath, String ramlFile, String plainJsonString) {
+    /**
+     * To convert Raml file to JSON schema with merge missing properties
+     * @param outFolderPath
+     * @param jsonFilesPath
+     * @param ramlFile
+     * @param plainJsonString
+     * @return
+     */
+    private static String convertRamlToJsonSchema(Path outFolderPath, Path jsonFilesPath, String ramlFile,
+                                                  String plainJsonString) {
         String prettyJson = "";
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, String> schemaByName = new RAMLJsonSchema04DefinitionBuilder(ramlFile).build();
@@ -154,144 +173,266 @@ public class Main {
         return prettyJson;
     }
 
-    /***
-     *
-     * @param jsonFilesPath: Location of folder where plain json converted files are located
-     * @param sourceJson: Json file from where all properties are stored
-     * @param targetSchema: Target json schema where properties from source json needs to be copied
+    /**
+     * To add missing properties in JsonSchema
+     * @param jsonFilesPath: Location where plain json files for all the domain objects
+     *                       with complete list of properties are generated
+     * @param sourceJson: Plain Json for the domain for which JsonSchema needs to be generated
+     * @param targetSchema: JsonSchema where properties needs to be merged
      * @return
      */
     private static DocumentContext addMissingJsonPropertiesInSchema(Path jsonFilesPath, String sourceJson, String targetSchema) {
         DocumentContext modifiedJsonSchema = JsonPath.using(Configuration.defaultConfiguration()).parse(targetSchema);
-
-        //parse json schema document
-        LinkedHashMap jsonSchemaDocument = (LinkedHashMap) Configuration.defaultConfiguration().jsonProvider().parse(targetSchema);
-
-        //parse json document
-        LinkedHashMap sourceJsonDocument = (LinkedHashMap) Configuration.defaultConfiguration().jsonProvider().parse(sourceJson);
-        LinkedHashMap jsonUses = new LinkedHashMap();
-
-        //get all domain(s) from "uses" section in plain/source json
-        if (sourceJsonDocument.containsKey("uses")) {
-            Object value = sourceJsonDocument.get("uses");
-            if (!(value instanceof String)) {
-                jsonUses = JsonPath.read(sourceJsonDocument, "uses");
-            }
+        Object jsonSchemaDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(targetSchema);
+        LinkedHashMap<Object, Object> jsonSchemaDocument = new LinkedHashMap();
+        LinkedHashMap<Object, Object> jsonSchemaDefinitions = new LinkedHashMap();
+        LinkedHashMap<Object, Object> sourceJsonDocument = new LinkedHashMap();
+        ObjectMapper oMapper = new ObjectMapper();
+        if (jsonSchemaDocument instanceof LinkedHashMap) {
+            jsonSchemaDocument = (LinkedHashMap)oMapper.convertValue(jsonSchemaDocumentObject, LinkedHashMap.class);
         }
 
-        //merge all the properties of the domain(s) from uses section
-        Iterator jsonUsesListIterator = jsonUses.keySet().iterator();
-        while (jsonUsesListIterator.hasNext()) {
-            String domainObject = (String) jsonUsesListIterator.next();
-            File jsonFile = new File(jsonFilesPath + "\\" + domainObject + ".json");
-            mergeMissingProperties(modifiedJsonSchema, jsonSchemaDocument, domainObject, jsonFile);
+        Object jsonSchemaDefinitionsObject = jsonSchemaDocument.get("definitions");
+        if (jsonSchemaDefinitionsObject instanceof LinkedHashMap) {
+            jsonSchemaDefinitions = (LinkedHashMap)oMapper.convertValue(jsonSchemaDocument.get("definitions"),
+                    LinkedHashMap.class);
         }
 
-        //merge all the properties of object listed in definition section(includes main domain object also)
-        LinkedHashMap jsonSchemaDefinitions = (LinkedHashMap) jsonSchemaDocument.get("definitions");
-        jsonSchemaDefinitions.forEach((definition, value) -> {
-            File jsonFile = new File(jsonFilesPath + "\\" + definition.toString() + ".json");
-            mergeMissingProperties(modifiedJsonSchema, jsonSchemaDocument, definition.toString(), jsonFile);
-        });
+        Object sourceJsonDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(sourceJson);
+        if (sourceJsonDocumentObject instanceof LinkedHashMap) {
+            sourceJsonDocument = (LinkedHashMap)oMapper.convertValue(sourceJsonDocumentObject, LinkedHashMap.class);
+        }
 
+        mergeDomainLevelProperties(modifiedJsonSchema, jsonSchemaDefinitions, sourceJsonDocument);
+        mergePropertiesFromRamlUses(jsonFilesPath, modifiedJsonSchema, jsonSchemaDocument, sourceJsonDocument);
+        mergePropertiesInJsonSchemaDefinitions(jsonFilesPath, modifiedJsonSchema, jsonSchemaDocument, jsonSchemaDefinitions);
         return modifiedJsonSchema;
     }
 
-    /***
-     *
-     * @param modifiedJsonSchema : Resultant JsonSchema with merged properties
-     * @param jsonSchemaDocument: Json Schema to be modified
-     * @param dependentSchema: Dependency ( abstract domain) name
-     * @param jsonFile: Plain json text
+    /**
+     * Merge properties for all the definitions present in the JsonSchema
+     * @param jsonFilesPath
+     * @param modifiedJsonSchema
+     * @param jsonSchemaDocument
+     * @param jsonSchemaDefinitions
      */
-    private static void mergeMissingProperties(DocumentContext modifiedJsonSchema, LinkedHashMap jsonSchemaDocument, String dependentSchema, File jsonFile) {
+    private static void mergePropertiesInJsonSchemaDefinitions(Path jsonFilesPath, DocumentContext modifiedJsonSchema,
+                                                               LinkedHashMap<Object, Object> jsonSchemaDocument,
+                                                               LinkedHashMap<Object, Object> jsonSchemaDefinitions) {
+        jsonSchemaDefinitions.forEach((definition, value) -> {
+            File jsonFile = new File(jsonFilesPath + "\\" + definition.toString() + ".json");
+            parseProperties(modifiedJsonSchema, jsonSchemaDocument, definition.toString(), jsonFile);
+        });
+    }
+
+    /**
+     * Merge all the properties of domains mentions in the Uses section in raml
+     * @param jsonFilesPath
+     * @param modifiedJsonSchema
+     * @param jsonSchemaDocument
+     * @param sourceJsonDocument
+     */
+    private static void mergePropertiesFromRamlUses(Path jsonFilesPath, DocumentContext modifiedJsonSchema,
+                                                    LinkedHashMap<Object, Object> jsonSchemaDocument,
+                                                    LinkedHashMap<Object, Object> sourceJsonDocument) {
+        LinkedHashMap<Object, Object> jsonUses = new LinkedHashMap();
+        if (sourceJsonDocument.containsKey("uses")) {
+            Object value = sourceJsonDocument.get("uses");
+            if (!(value instanceof String)) {
+                jsonUses = (LinkedHashMap)JsonPath.read(sourceJsonDocument, "uses");
+            }
+        }
+
+        Iterator jsonUsesListIterator = jsonUses.keySet().iterator();
+
+        while(jsonUsesListIterator.hasNext()) {
+            String domainObject = (String)jsonUsesListIterator.next();
+            File jsonFile = new File(jsonFilesPath + "\\" + domainObject + ".json");
+            parseProperties(modifiedJsonSchema, jsonSchemaDocument, domainObject, jsonFile);
+        }
+
+    }
+
+    /**
+     * Merge properties at top level in domain json schema structure
+     * @param modifiedJsonSchema
+     * @param jsonSchemaDefinitions
+     * @param sourceJsonDocument
+     */
+    private static void mergeDomainLevelProperties(DocumentContext modifiedJsonSchema,
+                                                   LinkedHashMap jsonSchemaDefinitions, LinkedHashMap sourceJsonDocument) {
+        LinkedHashMap<Object, Object> jsonDomainProperties = new LinkedHashMap();
+        LinkedHashMap<Object, Object> jsonSchemaDomainProperties = new LinkedHashMap();
+        Object typesObject = sourceJsonDocument.get("types");
+        ObjectMapper oMapper = new ObjectMapper();
+        if (typesObject instanceof LinkedHashMap) {
+            jsonDomainProperties = oMapper.convertValue(typesObject, LinkedHashMap.class);
+        }
+
+        List<Object> types = new ArrayList(jsonDomainProperties.keySet());
+        Object schemaDefinitionsObject = jsonSchemaDefinitions.get(types.get(0));
+        if (schemaDefinitionsObject instanceof LinkedHashMap) {
+            jsonSchemaDomainProperties = oMapper.convertValue(schemaDefinitionsObject, LinkedHashMap.class);
+        }
+
+        jsonDomainProperties = (LinkedHashMap)jsonDomainProperties.get(types.get(0));
+        LinkedHashMap<Object, Object> finalJsonSchemaDomainProperties = jsonSchemaDomainProperties;
+        jsonDomainProperties.forEach((property, value) -> {
+            if (!finalJsonSchemaDomainProperties.containsKey(property)) {
+                finalJsonSchemaDomainProperties.put(property, value);
+            }
+
+        });
+        String jsonPath = "$..definitions." + types.get(0);
+        modifiedJsonSchema.set(jsonPath, jsonSchemaDomainProperties);
+    }
+
+    /**
+     *
+     * @param modifiedJsonSchema
+     * @param jsonSchemaDocument
+     * @param dependentSchema
+     * @param jsonFile
+     */
+    private static void parseProperties(DocumentContext modifiedJsonSchema, LinkedHashMap jsonSchemaDocument,
+                                        String dependentSchema, File jsonFile) {
+        ObjectMapper oMapper = new ObjectMapper();
         if (jsonFile.exists()) {
             String jsonContent = "";
+
             try {
+                LinkedHashMap<Object, Object> jsonDocument = new LinkedHashMap();
+                LinkedHashMap<Object, Object> jsonProperties = new LinkedHashMap();
+                LinkedHashMap<Object, Object> jsonSchemaProperties = new LinkedHashMap();
+                LinkedHashMap<Object, Object> schemaDefinitions = new LinkedHashMap();
                 jsonContent = new String(Files.readAllBytes(Paths.get(jsonFile.toURI())));
-                LinkedHashMap jsonDocument = (LinkedHashMap) Configuration.defaultConfiguration().jsonProvider().parse(jsonContent);
-                LinkedHashMap jsonProperties = new LinkedHashMap();
-                LinkedHashMap jsonSchemaProperties = new LinkedHashMap();
+                Object jsonObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonContent);
+                if (jsonObject instanceof LinkedHashMap) {
+                    jsonDocument = oMapper.convertValue(jsonObject, LinkedHashMap.class);
+                }
 
-                String domainName = jsonSchemaDocument.get("$ref").toString().substring(jsonSchemaDocument.get("$ref").toString().lastIndexOf("/")+1);
+                String domainName = jsonSchemaDocument.get("$ref").toString().substring(jsonSchemaDocument.
+                        get("$ref").toString().lastIndexOf('/') + 1);
+                Object definitionsObject = jsonSchemaDocument.get("definitions");
+                if (definitionsObject instanceof LinkedHashMap) {
+                    schemaDefinitions = oMapper.convertValue(definitionsObject, LinkedHashMap.class);
+                }
 
-                LinkedHashMap schemaDefinitions = (LinkedHashMap) jsonSchemaDocument.get("definitions");
-                if(schemaDefinitions.containsKey(dependentSchema)){
+                if (schemaDefinitions.containsKey(dependentSchema)) {
                     domainName = dependentSchema;
                 }
-                //fetch all the properties from the plain json document
-                LinkedHashMap types = JsonPath.read(jsonDocument, "$.types." + dependentSchema);
-                if (types.containsKey("properties")) {
-                    if (!(types.get("properties") instanceof String && types.get("properties").equals(""))) {
-                        jsonProperties = JsonPath.read(jsonDocument, "$.types." + dependentSchema + ".properties");
-                    }
+
+                LinkedHashMap<Object, Object> types = JsonPath.read(jsonDocument, "$.types."
+                        + dependentSchema);
+                if (types.containsKey("properties") && (!(types.get("properties") instanceof String) ||
+                        !types.get("properties").equals(""))) {
+                    jsonProperties = (LinkedHashMap)types.get("properties");
                 }
-                LinkedHashMap domain = JsonPath.read(jsonSchemaDocument, "$.definitions." + domainName);
+
+                LinkedHashMap<Object, Object> domain = JsonPath.read(jsonSchemaDocument, "$.definitions."
+                        + domainName);
                 if (domain.containsKey("properties")) {
-                    jsonSchemaProperties = JsonPath.read(jsonSchemaDocument, "$.definitions." + domainName + ".properties");
+                    jsonSchemaProperties = (LinkedHashMap)domain.get("properties");
                 }
 
-                //merge properties for abstract domains
-                LinkedHashMap finalParsedPropertiesJsonSchema = jsonSchemaProperties;
-                String finalDomainName = domainName;
-                jsonProperties.forEach((property, value) -> {
-                    property = property.toString().replaceAll("[?]", "");
-                    if (finalParsedPropertiesJsonSchema.containsKey(property)) {
-                        LinkedHashMap schemaProperties = (LinkedHashMap) finalParsedPropertiesJsonSchema.get(property);
-                        LinkedHashMap plainJsonProperties = (LinkedHashMap) value;
-
-                        Object finalProperty = property;
-                        plainJsonProperties.forEach((jsonProperty, jsonPropertyValue) -> {
-                            if (!schemaProperties.containsKey(jsonProperty)) {
-                                schemaProperties.put(jsonProperty, jsonPropertyValue);
-                                String jsonPath = "$..definitions." + finalDomainName + ".properties." + finalProperty;
-                                modifiedJsonSchema.set(jsonPath, schemaProperties);
-                            }
-                        });
-                    }
-                });
+                mergeJson(modifiedJsonSchema, jsonProperties, jsonSchemaProperties, domainName);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+
     }
 
-    private static void createPlainJsonFromRaml(String schemaLocation, Path targetLocation) {
+    /**
+     * Merge properties from plain Json to Json schema
+     * @param modifiedJsonSchema: Merged Json schema
+     * @param jsonProperties: map containing list of all the properties
+     * @param jsonSchemaProperties: map containing list of properties where missing properties to be added
+     * @param domainName
+     */
+    private static void mergeJson(DocumentContext modifiedJsonSchema, LinkedHashMap jsonProperties,
+                                  LinkedHashMap jsonSchemaProperties, String domainName) {
+        jsonProperties.forEach((property, value) -> {
+            Object propertyObject = property.toString().replaceAll("[?]", "");
+            if (jsonSchemaProperties.containsKey(propertyObject)) {
+                LinkedHashMap<Object, Object> schemaProperties = new LinkedHashMap();
+                LinkedHashMap<Object, Object> plainJsonProperties = new LinkedHashMap();
+                ObjectMapper oMapper = new ObjectMapper();
+                Object jsonPropertyObject = jsonSchemaProperties.get(propertyObject);
+                if (jsonPropertyObject instanceof LinkedHashMap) {
+                    schemaProperties = oMapper.convertValue(jsonPropertyObject, LinkedHashMap.class);
+                }
+
+                if (value instanceof LinkedHashMap) {
+                    plainJsonProperties = oMapper.convertValue(value, LinkedHashMap.class);
+                }
+
+                LinkedHashMap<Object, Object> finalSchemaProperties = schemaProperties;
+                plainJsonProperties.forEach((jsonProperty, jsonPropertyValue) -> {
+                    if (!finalSchemaProperties.containsKey(jsonProperty)) {
+                        finalSchemaProperties.put(jsonProperty, jsonPropertyValue);
+                        String jsonPath = "$..definitions." + domainName + ".properties." + propertyObject;
+                        modifiedJsonSchema.set(jsonPath, finalSchemaProperties);
+                    }
+
+                });
+            }
+
+        });
+    }
+
+    /**
+     * To delete plain json files after merging is complete
+     * @param jsonFilesLocation: Location of json files
+     * @throws IOException
+     */
+    static void deleteFiles(Path jsonFilesLocation) throws IOException {
+        Path jsonFilesFolder = Paths.get(jsonFilesLocation.toUri());
+        if (Files.exists(jsonFilesFolder)) {
+            Files.walk(jsonFilesFolder)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+        }
+    }
+
+    /** To create plain JSON files from Raml files
+     * @param schemaLocation: path where raml files are stored
+     * @param targetLocation: path where json files will be created
+     */
+    private static void createPlainJsonFromRaml(Path schemaLocation, Path targetLocation) {
         Pattern endsWithRamlPattern = Pattern.compile("(.*)[.][Rr][Aa][Mm][Ll]");
         final String[] prettyJson = {""};
         ObjectMapper objectMapper = new ObjectMapper();
 
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(schemaLocation))) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(schemaLocation)) {
             stream.forEach(p -> {
-                if (endsWithRamlPattern.matcher(p.toString()).matches()) {
-                    try {
-                        String plainJson = convertRamlToPlainJson(p.toString());
-                        String schemaName = p.toString().substring(p.toString().lastIndexOf("\\") + 1);
-                        String schemaFileName = schemaName.substring(0, schemaName.lastIndexOf("."));
-                        File jsonFile = new File(targetLocation.toFile(), schemaFileName);
-                        if (!targetLocation.toFile().exists()) {
-                            if (targetLocation.toFile().mkdir()) {
-                                System.out.println("Directory is created!");
-                            } else {
-                                System.out.println("Failed to create directory!");
+                if (!p.getFileName().toString().equalsIgnoreCase("todo")) {
+                    if (endsWithRamlPattern.matcher(p.toString()).matches()) {
+                        try {
+                            String plainJson = convertRamlToPlainJson(p.toString());
+                            String schemaName = p.toString().substring(p.toString().lastIndexOf("\\") + 1);
+                            String schemaFileName = schemaName.substring(0, schemaName.lastIndexOf("."));
+                            File jsonFile = new File(targetLocation.toFile(), schemaFileName);
+                            if (!targetLocation.toFile().exists()) {
+                                targetLocation.toFile().mkdir();
                             }
+                            try (Writer writer = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(jsonFile + ".json")), StandardCharsets.UTF_8)) {
+                                prettyJson[0] = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readTree(plainJson));
+                                writer.write(prettyJson[0]);
+                                writer.flush();
+                            } catch (FileNotFoundException e) {
+                                throw new RuntimeException(e);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        } catch (RuntimeException e) {
+                            System.err.println("FILE: " + p.toString());
+                            throw e;
                         }
-                        try (Writer writer = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(jsonFile + ".json")), StandardCharsets.UTF_8)) {
-                            prettyJson[0] = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readTree(plainJson));
-                            writer.write(prettyJson[0]);
-                            writer.flush();
-                        } catch (FileNotFoundException e) {
-                            throw new RuntimeException(e);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-
-                    } catch (RuntimeException e) {
-                        System.err.println("FILE: " + p.toString());
-                        throw e;
+                    } else {
+                        createPlainJsonFromRaml(p, targetLocation);
                     }
-                } else {
-                    createPlainJsonFromRaml(p.toString(), targetLocation);
                 }
             });
         } catch (IOException e) {
@@ -299,6 +440,10 @@ public class Main {
         }
     }
 
+    /**
+     * @param ramlFile: Raml file to be parsed as plain json
+     * @return: Plain Json text converted from Raml file
+     */
     private static String convertRamlToPlainJson(String ramlFile) {
         String content = "";
         String json = "";
