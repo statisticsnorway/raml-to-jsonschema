@@ -1,6 +1,9 @@
 package no.ssb.raml;
 
-import org.testng.annotations.Ignore;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import org.hamcrest.collection.IsMapContaining;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -9,7 +12,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
-
+import java.util.LinkedHashMap;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.number.OrderingComparison.greaterThanOrEqualTo;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
@@ -42,7 +47,61 @@ public class MainTest {
     }
 
     @Test
-    public void verifyPropertiesMergedInJsonSchema(){
+    public void verifyPropertiesMergedInJsonSchema() throws IOException {
+        String jsonFolderPath = "jsonFiles";
+        Path schemaFolderPath = Paths.get("src/test/resources/raml/schemas");
+        String outputFolder = "target/schemas";
 
+        //String usage = Main.convertSchemas(new String[]{outputFolder, "src/test/resources/raml/schemas"});
+
+       // assertTrue(usage.isEmpty());
+        LinkedHashMap<Object, Object> jsonSchemaDocument = new LinkedHashMap();
+        LinkedHashMap<Object, Object> jsonDocument = new LinkedHashMap();
+
+        LinkedHashMap<Object, Object> jsonSchemaProperties = new LinkedHashMap<>();
+        LinkedHashMap<Object, Object> jsonProperties = new LinkedHashMap<>();
+
+        Main.createPlainJsonFromRaml(schemaFolderPath, Paths.get(jsonFolderPath));
+
+        if(Files.exists(Paths.get(outputFolder, "Agent.json"))){
+            Path mergedJsonSchemaPath =Paths.get(outputFolder, "Agent.json");
+            String mergedFileContent = "";
+
+            mergedFileContent = new String(Files.readAllBytes(mergedJsonSchemaPath));
+            Object jsonSchemaDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(mergedFileContent);
+            ObjectMapper oMapper = new ObjectMapper();
+
+            if (jsonSchemaDocumentObject instanceof LinkedHashMap) {
+                jsonSchemaDocument = (LinkedHashMap)oMapper.convertValue(jsonSchemaDocumentObject, LinkedHashMap.class);
+            }
+
+            if(Files.exists(Paths.get(jsonFolderPath, "Agent.json"))){
+                Path plainJsonFilePath =Paths.get(jsonFolderPath, "Agent.json");
+                String jsonFileContent = "";
+                jsonFileContent = new String(Files.readAllBytes(plainJsonFilePath));
+
+                Object jsonDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonFileContent);
+
+                if (jsonDocumentObject instanceof LinkedHashMap) {
+                    jsonDocument = (LinkedHashMap)oMapper.convertValue(jsonDocumentObject, LinkedHashMap.class);
+                }
+
+                jsonProperties = JsonPath.read(jsonDocument, "types.Agent.properties");
+                jsonSchemaProperties = JsonPath.read(jsonSchemaDocument, "definitions.Agent.properties");
+
+                LinkedHashMap<Object, Object> finalJsonSchemaProperties = jsonSchemaProperties;
+                jsonProperties.forEach((property, value)->{
+                    if(finalJsonSchemaProperties.containsKey(property)){
+                        LinkedHashMap schemaPropertyList = (LinkedHashMap) finalJsonSchemaProperties.get(property);
+                        LinkedHashMap jsonPropertyList = (LinkedHashMap) value;
+
+                        assertThat(schemaPropertyList.size(), greaterThanOrEqualTo(jsonPropertyList.size()));
+
+                    }
+                });
+            }
+
+        }
+        Main.deleteFiles(Paths.get(jsonFolderPath));
     }
 }

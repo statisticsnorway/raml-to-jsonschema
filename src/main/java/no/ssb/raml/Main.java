@@ -194,7 +194,8 @@ public class Main {
         LinkedHashMap<Object, Object> jsonSchemaDefinitions = new LinkedHashMap();
         LinkedHashMap<Object, Object> sourceJsonDocument = new LinkedHashMap();
         ObjectMapper oMapper = new ObjectMapper();
-        if (jsonSchemaDocument instanceof LinkedHashMap) {
+
+        if (jsonSchemaDocumentObject instanceof LinkedHashMap) {
             jsonSchemaDocument = (LinkedHashMap)oMapper.convertValue(jsonSchemaDocumentObject, LinkedHashMap.class);
         }
 
