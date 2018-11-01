@@ -37,7 +37,12 @@ public class MainTest {
 
         assertTrue(usage.isEmpty());
         assertTrue(Files.exists(Paths.get(outputFolder, "Agent.json")));
-        //assertTrue(Files.exists(Paths.get(outputFolder, "Role.json")));
+        assertTrue(Files.exists(Paths.get(outputFolder, "Role.json")));
         assertTrue(Files.exists(Paths.get(outputFolder, "AgentInRole.json")));
+    }
+
+    @Test
+    public void verifyPropertiesMergedInJsonSchema(){
+
     }
 }

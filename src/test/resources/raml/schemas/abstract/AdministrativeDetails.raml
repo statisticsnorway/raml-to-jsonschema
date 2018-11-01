@@ -1,0 +1,29 @@
+#%RAML 1.0 Library
+types:
+
+  AdministrativeDetails:
+    description: A generic and expandable key-value-store for adding present and future AdministrativeDetails-attributes to any information object.
+    displayName: Adminstrative detaljer
+    type: object
+    properties:
+      administrativeDetailType:
+        type: string
+        description: The type (key) of the AdministrativeDetails-attribute.
+        displayName: Type administrativ detalj
+        enum:   # TODO: Foreløpig en enum, men bør flyttes til KLASS?
+          - DEFAULTLANGUAGE
+          - ANNOTATION
+          - ALIAS
+          - URL
+          - DOCUMENTATION
+          - LIFECYCLESTATUS
+          - LOCALID
+      values:
+        type: array
+        description: One or more values (a list) for this administrativeDetailType.
+        displayName: Verdi(er)
+
+      #TODO: Det er trolig behov for attributten "description" for å kunne beskrive mer spesifikt hva dette er, f.eks. hva slags "DOCUMENTATION".
+      #      (En eventuelt "description" må være av typen "MultilingualText" for å støtte flere språk.)
+
+    example: !include ../../examples/AdministrativeDetailsExample.json

@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -54,9 +55,14 @@ public class Main {
         }
         Path outFolderPath = Paths.get(args[0]);
         File outFolder = outFolderPath.toFile();
+
         Path schemaFolderPath = Paths.get(args[1]);
 
-        createPlainJsonFromRaml(schemaFolderPath, jsonFilesLocation);
+        // to get location of all the schemas
+        int schemasStringIndex = schemaFolderPath.toString().lastIndexOf("schemas");
+        String schemasLocation = schemaFolderPath.toFile().toString().substring(0,schemasStringIndex+"schemas".length());
+
+        createPlainJsonFromRaml(Paths.get(schemasLocation), jsonFilesLocation);
 
         if (!outFolder.exists()) {
             boolean created = outFolder.mkdirs();
@@ -400,7 +406,7 @@ public class Main {
      * @param schemaLocation: path where raml files are stored
      * @param targetLocation: path where json files will be created
      */
-    private static void createPlainJsonFromRaml(Path schemaLocation, Path targetLocation) {
+    static void createPlainJsonFromRaml(Path schemaLocation, Path targetLocation) {
         Pattern endsWithRamlPattern = Pattern.compile("(.*)[.][Rr][Aa][Mm][Ll]");
         final String[] prettyJson = {""};
         ObjectMapper objectMapper = new ObjectMapper();

@@ -49,8 +49,6 @@ public class RAMLJsonSchema04DefinitionBuilder {
         Iterator<TypeDeclaration> typeIterator = types.iterator();
         while (typeIterator.hasNext()) {
             TypeDeclaration type = typeIterator.next();
-            String name = type.name();
-            String s = type.defaultValue();
             String schemaJsonStr = type.toJsonSchema();
             schemaByName.put(type.name(), schemaJsonStr);
         }
