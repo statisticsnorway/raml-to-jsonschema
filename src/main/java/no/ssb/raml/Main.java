@@ -47,10 +47,6 @@ public class Main {
     }
 
     static String convertSchemas(String[] args) throws IOException {
-
-        Path jsonFilesLocation = Paths.get("jsonFiles"); //location where plain json files will be stored.
-        String jsonText = "";
-
         if (args.length < 2) {
             return printUsage();
         }
@@ -68,7 +64,7 @@ public class Main {
         String schemasLocation = schemaFolderPath.toFile().toString().substring(0,schemasStringIndex+"schemas".length());
 
         //convert Raml schemas to plain json files. These will be used to merge properties
-        createPlainJsonFromRaml(Paths.get(schemasLocation), jsonFilesLocation);
+        createPlainJsonFromRaml(Paths.get(schemasLocation), Paths.get("jsonFiles"));
 
         if (!outFolder.exists()) {
             boolean created = outFolder.mkdirs();
@@ -92,6 +88,8 @@ public class Main {
             String arg = args[i];
             Path path = Paths.get(arg);
             File file = path.toFile();
+            String jsonText = "";
+
             if (!file.exists()) {
                 System.err.format("Parameter '%s' does not exist on the file-system.\n", arg);
                 continue;
@@ -107,19 +105,19 @@ public class Main {
             if (file.isFile()) {
                 try {
                     jsonText = convertRamlToPlainJson(file.toString());
-                    convertRamlToJsonSchema(outFolderPath, jsonFilesLocation, arg, jsonText);
+                    convertRamlToJsonSchema(outFolderPath, Paths.get("jsonFiles"), arg, jsonText);
                 } catch (RuntimeException e) {
                     System.err.println("FILE: " + arg);
                     throw e;
                 }
             } else {
                 //parse directory
-                parseDirectoryFiles(outFolderPath, jsonFilesLocation, arg);
+                parseDirectoryFiles(outFolderPath, Paths.get("jsonFiles"), arg);
             }
         }
 
         //delete plain json files after merging is complete
-        deleteFiles(jsonFilesLocation);
+        deleteFiles(Paths.get("jsonFiles"));
         return "";
     }
 

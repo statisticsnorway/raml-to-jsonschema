@@ -12,8 +12,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.number.OrderingComparison.greaterThanOrEqualTo;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
@@ -93,8 +91,7 @@ public class MainTest {
                     if(finalJsonSchemaProperties.containsKey(property)){
                         LinkedHashMap schemaPropertyList = (LinkedHashMap) finalJsonSchemaProperties.get(property);
                         LinkedHashMap jsonPropertyList = (LinkedHashMap) value;
-
-                        assertThat(schemaPropertyList.size(), greaterThanOrEqualTo(jsonPropertyList.size()));
+                        assertTrue(schemaPropertyList.size() == jsonPropertyList.size());
 
                     }
                 });
