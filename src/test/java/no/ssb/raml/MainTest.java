@@ -91,7 +91,7 @@ public class MainTest {
                     if(finalJsonSchemaProperties.containsKey(property)){
                         LinkedHashMap schemaPropertyList = (LinkedHashMap) finalJsonSchemaProperties.get(property);
                         LinkedHashMap jsonPropertyList = (LinkedHashMap) value;
-                        assertTrue(schemaPropertyList.size() == jsonPropertyList.size());
+                        assertTrue(schemaPropertyList.size() >= jsonPropertyList.size());
 
                     }
                 });
