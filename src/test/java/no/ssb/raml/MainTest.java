@@ -3,7 +3,6 @@ package no.ssb.raml;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
-import org.hamcrest.collection.IsMapContaining;
 import org.testng.annotations.Test;
 
 import java.io.File;

@@ -47,21 +47,27 @@ public class Main {
     }
 
     static String convertSchemas(String[] args) throws IOException {
-        Path jsonFilesLocation = Paths.get("jsonFiles");
+
+        Path jsonFilesLocation = Paths.get("jsonFiles"); //location where plain json files will be stored.
         String jsonText = "";
 
         if (args.length < 2) {
             return printUsage();
         }
         Path outFolderPath = Paths.get(args[0]);
-        File outFolder = outFolderPath.toFile();
+        File outFolder = outFolderPath.toFile(); //location of json schemas after merging
 
-        Path schemaFolderPath = Paths.get(args[1]);
+        Path schemaFolderPath = Paths.get(args[1]); //Location of raml schemas
 
-        // to get location of all the schemas
+        /**
+         *  To get location of all the schemas. To convert single raml file to json schema, plain json text is needed for all raml
+         *  files. "schemasLocation" stores the location of the "schemas" folder
+         */
+
         int schemasStringIndex = schemaFolderPath.toString().lastIndexOf("schemas");
         String schemasLocation = schemaFolderPath.toFile().toString().substring(0,schemasStringIndex+"schemas".length());
 
+        //convert Raml schemas to plain json files. These will be used to merge properties
         createPlainJsonFromRaml(Paths.get(schemasLocation), jsonFilesLocation);
 
         if (!outFolder.exists()) {
@@ -107,9 +113,12 @@ public class Main {
                     throw e;
                 }
             } else {
+                //parse directory
                 parseDirectoryFiles(outFolderPath, jsonFilesLocation, arg);
             }
         }
+
+        //delete plain json files after merging is complete
         deleteFiles(jsonFilesLocation);
         return "";
     }
@@ -164,6 +173,7 @@ public class Main {
             Path schemaPath = Paths.get(outFolderPath.toString(), schemaFileName);
             File schemaFile = Paths.get(schemaPath.toString()).toFile();
 
+            //after generation JsonSchema in schema 04 format, add missing properties in schema from plainJson
             DocumentContext modifiedJsonSchema = addMissingJsonPropertiesInSchema(jsonFilesPath, plainJsonString, entry.getValue());
 
             try (Writer writer = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(schemaFile)), StandardCharsets.UTF_8)) {
@@ -199,6 +209,7 @@ public class Main {
             jsonSchemaDocument = (LinkedHashMap)oMapper.convertValue(jsonSchemaDocumentObject, LinkedHashMap.class);
         }
 
+        //get all the definitions from Json schema
         Object jsonSchemaDefinitionsObject = jsonSchemaDocument.get("definitions");
         if (jsonSchemaDefinitionsObject instanceof LinkedHashMap) {
             jsonSchemaDefinitions = (LinkedHashMap)oMapper.convertValue(jsonSchemaDocument.get("definitions"),
@@ -210,9 +221,15 @@ public class Main {
             sourceJsonDocument = (LinkedHashMap)oMapper.convertValue(sourceJsonDocumentObject, LinkedHashMap.class);
         }
 
+        //merge domain level properties(Role: displayName, description etc)
         mergeDomainLevelProperties(modifiedJsonSchema, jsonSchemaDefinitions, sourceJsonDocument);
+
+        //merge properties for all the domain mentioned in the uses section in raml file
         mergePropertiesFromRamlUses(jsonFilesPath, modifiedJsonSchema, jsonSchemaDocument, sourceJsonDocument);
+
+        //merge properties for all the definitions mentioned in JsonSchema
         mergePropertiesInJsonSchemaDefinitions(jsonFilesPath, modifiedJsonSchema, jsonSchemaDocument, jsonSchemaDefinitions);
+
         return modifiedJsonSchema;
     }
 
@@ -226,6 +243,7 @@ public class Main {
     private static void mergePropertiesInJsonSchemaDefinitions(Path jsonFilesPath, DocumentContext modifiedJsonSchema,
                                                                LinkedHashMap<Object, Object> jsonSchemaDocument,
                                                                LinkedHashMap<Object, Object> jsonSchemaDefinitions) {
+        //parse each and every definition from JsonSchema
         jsonSchemaDefinitions.forEach((definition, value) -> {
             File jsonFile = new File(jsonFilesPath + "\\" + definition.toString() + ".json");
             parseProperties(modifiedJsonSchema, jsonSchemaDocument, definition.toString(), jsonFile);
@@ -295,7 +313,7 @@ public class Main {
     }
 
     /**
-     *
+     * To parse properties from the Source Json ( plain json ) and Target Json ( Json schema)
      * @param modifiedJsonSchema
      * @param jsonSchemaDocument
      * @param dependentSchema
@@ -312,14 +330,19 @@ public class Main {
                 LinkedHashMap<Object, Object> jsonProperties = new LinkedHashMap();
                 LinkedHashMap<Object, Object> jsonSchemaProperties = new LinkedHashMap();
                 LinkedHashMap<Object, Object> schemaDefinitions = new LinkedHashMap();
+
+                // get plain json for the required Json schema ( Role, Agent etc)
                 jsonContent = new String(Files.readAllBytes(Paths.get(jsonFile.toURI())));
+
                 Object jsonObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonContent);
                 if (jsonObject instanceof LinkedHashMap) {
                     jsonDocument = oMapper.convertValue(jsonObject, LinkedHashMap.class);
                 }
 
+                //get domain name for which merging is to be performed
                 String domainName = jsonSchemaDocument.get("$ref").toString().substring(jsonSchemaDocument.
                         get("$ref").toString().lastIndexOf('/') + 1);
+
                 Object definitionsObject = jsonSchemaDocument.get("definitions");
                 if (definitionsObject instanceof LinkedHashMap) {
                     schemaDefinitions = oMapper.convertValue(definitionsObject, LinkedHashMap.class);
