@@ -206,19 +206,19 @@ public class Main {
         ObjectMapper oMapper = new ObjectMapper();
 
         if (jsonSchemaDocumentObject instanceof LinkedHashMap) {
-            jsonSchemaDocument = (LinkedHashMap)oMapper.convertValue(jsonSchemaDocumentObject, LinkedHashMap.class);
+            jsonSchemaDocument = oMapper.convertValue(jsonSchemaDocumentObject, LinkedHashMap.class);
         }
 
         //get all the definitions from Json schema
         Object jsonSchemaDefinitionsObject = jsonSchemaDocument.get("definitions");
         if (jsonSchemaDefinitionsObject instanceof LinkedHashMap) {
-            jsonSchemaDefinitions = (LinkedHashMap)oMapper.convertValue(jsonSchemaDocument.get("definitions"),
+            jsonSchemaDefinitions = oMapper.convertValue(jsonSchemaDocument.get("definitions"),
                     LinkedHashMap.class);
         }
 
         Object sourceJsonDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(sourceJson);
         if (sourceJsonDocumentObject instanceof LinkedHashMap) {
-            sourceJsonDocument = (LinkedHashMap)oMapper.convertValue(sourceJsonDocumentObject, LinkedHashMap.class);
+            sourceJsonDocument = oMapper.convertValue(sourceJsonDocumentObject, LinkedHashMap.class);
         }
 
         //merge domain level properties(Role: displayName, description etc)
@@ -264,7 +264,7 @@ public class Main {
         if (sourceJsonDocument.containsKey("uses")) {
             Object value = sourceJsonDocument.get("uses");
             if (!(value instanceof String)) {
-                jsonUses = (LinkedHashMap)JsonPath.read(sourceJsonDocument, "uses");
+                jsonUses = JsonPath.read(sourceJsonDocument, "uses");
             }
         }
 
@@ -356,15 +356,14 @@ public class Main {
                         + dependentSchema);
                 if (types.containsKey("properties") && (!(types.get("properties") instanceof String) ||
                         !types.get("properties").equals(""))) {
-                    jsonProperties = (LinkedHashMap)types.get("properties");
+                    jsonProperties = JsonPath.read(types, "properties");
                 }
 
                 LinkedHashMap<Object, Object> domain = JsonPath.read(jsonSchemaDocument, "$.definitions."
                         + domainName);
                 if (domain.containsKey("properties")) {
-                    jsonSchemaProperties = (LinkedHashMap)domain.get("properties");
+                    jsonSchemaProperties = JsonPath.read(domain, "properties");
                 }
-
                 mergeJson(modifiedJsonSchema, jsonProperties, jsonSchemaProperties, domainName);
             } catch (IOException e) {
                 e.printStackTrace();
