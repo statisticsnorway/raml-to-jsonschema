@@ -56,7 +56,7 @@ public class DirectoryUtils {
     }
 
     public String getName(Path p) {
-        return p.toString().substring(p.toString().lastIndexOf('\\') + 1);
+        return p.toString().substring(p.toString().lastIndexOf(File.separatorChar) + 1);
     }
 
     public static String readFileContent(Path fileLocation){
