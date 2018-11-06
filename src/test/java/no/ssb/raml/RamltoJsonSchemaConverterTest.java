@@ -18,7 +18,6 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class RamltoJsonSchemaConverterTest {
-
     @Test
     public void thatPrintUsageWorks() throws IOException {
         String usage = RamltoJsonSchemaConverter.convertSchemas(new String[]{"too-few-arguments"});
@@ -48,11 +47,10 @@ public class RamltoJsonSchemaConverterTest {
     @Test
     public void verifyPropertiesMergedInJsonSchema() throws IOException {
         RamlSchemaParser ramlSchemaParser = new RamlSchemaParser();
-        DirectoryUtils directoryUtils = new DirectoryUtils();
 
-        Path jsonFilesLocation = directoryUtils.resolveRelativeFilePath(DirectoryUtils.TODO_FOLDER);
-        Path schemaFolderPath = directoryUtils.resolveRelativeFilePath("src/test/resources/raml/schemas");
-        Path outputFolder = directoryUtils.resolveRelativeFilePath("target/schemas");
+        Path jsonFilesLocation = DirectoryUtils.resolveRelativeFilePath(DirectoryUtils.JSON_TEMP_FOLDER);
+        Path schemaFolderPath = DirectoryUtils.resolveRelativeFilePath("src/test/resources/raml/schemas");
+        Path outputFolder = DirectoryUtils.resolveRelativeFilePath("target/schemas");
 
         RamltoJsonSchemaConverter.convertSchemas(new String[]{outputFolder.toString(), "src/test/resources/raml/schemas"});
 
@@ -65,11 +63,11 @@ public class RamltoJsonSchemaConverterTest {
 
         ramlSchemaParser.createJsonText(schemaFolderPath, jsonFilesLocation);
 
-        if(directoryUtils.resolveRelativeFolderPath(outputFolder.toString(), "Agent.json").toFile().exists()){
-            Path mergedJsonSchemaPath =directoryUtils.resolveRelativeFolderPath(outputFolder.toString(), "Agent.json");
+        if(DirectoryUtils.resolveRelativeFolderPath(outputFolder.toString(), "Agent.json").toFile().exists()){
+            Path mergedJsonSchema = DirectoryUtils.resolveRelativeFolderPath(outputFolder.toString(), "Agent.json");
             String mergedFileContent = "";
 
-            mergedFileContent = new String(Files.readAllBytes(mergedJsonSchemaPath));
+            mergedFileContent =DirectoryUtils.readFileContent(mergedJsonSchema);
             Object jsonSchemaDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(mergedFileContent);
             ObjectMapper oMapper = new ObjectMapper();
 
@@ -100,8 +98,7 @@ public class RamltoJsonSchemaConverterTest {
                     }
                 });
             }
-
+            DirectoryUtils.deleteFiles(jsonFilesLocation);
         }
-        DirectoryUtils.deleteFiles(jsonFilesLocation);
     }
 }

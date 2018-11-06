@@ -77,6 +77,7 @@ public class DirectoryUtils {
             formattedText[0] = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readTree(plainText));
             writer.write(formattedText[0]);
             writer.flush();
+            writer.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
