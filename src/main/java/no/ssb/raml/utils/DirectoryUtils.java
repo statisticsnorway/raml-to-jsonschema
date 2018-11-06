@@ -82,12 +82,7 @@ public class DirectoryUtils {
         }
     }
 
-    /**
-     * To delete plain json files after merging is complete
-     *
-     * @param filesLocation: Location of files to be deleted
-     * @throws IOException
-     */
+
     public static void deleteFiles(Path filesLocation) throws IOException {
         Path folder = Paths.get(filesLocation.toUri());
         if (folder.toFile().exists()) {

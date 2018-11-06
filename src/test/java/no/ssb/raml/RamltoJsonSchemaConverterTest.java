@@ -45,7 +45,7 @@ public class RamltoJsonSchemaConverterTest {
         assertTrue(Files.exists(Paths.get(outputFolder, "AgentInRole.json")));
     }
 
-    /*@Test
+    @Test
     public void verifyPropertiesMergedInJsonSchema() throws IOException {
         RamlSchemaParser ramlSchemaParser = new RamlSchemaParser();
         DirectoryUtils directoryUtils = new DirectoryUtils();
@@ -54,7 +54,7 @@ public class RamltoJsonSchemaConverterTest {
         Path schemaFolderPath = directoryUtils.resolveRelativeFilePath("src/test/resources/raml/schemas");
         Path outputFolder = directoryUtils.resolveRelativeFilePath("target/schemas");
 
-        //String usage = RamltoJsonSchemaConverter.convertSchemas(new String[]{outputFolder, "src/test/resources/raml/schemas"});
+        RamltoJsonSchemaConverter.convertSchemas(new String[]{outputFolder.toString(), "src/test/resources/raml/schemas"});
 
        // assertTrue(usage.isEmpty());
         LinkedHashMap<Object, Object> jsonSchemaDocument = new LinkedHashMap();
@@ -77,10 +77,9 @@ public class RamltoJsonSchemaConverterTest {
                 jsonSchemaDocument = (LinkedHashMap)oMapper.convertValue(jsonSchemaDocumentObject, LinkedHashMap.class);
             }
 
-            if(Files.exists(Paths.get(jsonFolderPath, "Agent.json"))){
-                Path plainJsonFilePath =Paths.get(jsonFolderPath, "Agent.json");
-                String jsonFileContent = "";
-                jsonFileContent = new String(Files.readAllBytes(plainJsonFilePath));
+            if(DirectoryUtils.resolveRelativeFolderPath(jsonFilesLocation.toString(), "Agent.json").toFile().exists()){
+                Path plainJsonFilePath = DirectoryUtils.resolveRelativeFolderPath(jsonFilesLocation.toString(), "Agent.json");
+                String jsonFileContent = DirectoryUtils.readFileContent(plainJsonFilePath);
 
                 Object jsonDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonFileContent);
 
@@ -103,6 +102,6 @@ public class RamltoJsonSchemaConverterTest {
             }
 
         }
-        RamltoJsonSchemaConverter.deleteFiles(Paths.get(jsonFolderPath));
-    }*/
+        DirectoryUtils.deleteFiles(jsonFilesLocation);
+    }
 }
