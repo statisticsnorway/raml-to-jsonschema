@@ -3,6 +3,8 @@ package no.ssb.raml;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import no.ssb.raml.ramlhandler.RamlSchemaParser;
+import no.ssb.raml.utils.DirectoryUtils;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -15,11 +17,11 @@ import java.util.LinkedHashMap;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-public class MainTest {
+public class RamltoJsonSchemaConverterTest {
 
     @Test
     public void thatPrintUsageWorks() throws IOException {
-        String usage = Main.convertSchemas(new String[]{"too-few-arguments"});
+        String usage = RamltoJsonSchemaConverter.convertSchemas(new String[]{"too-few-arguments"});
         assertTrue(usage.startsWith("Usage: "));
     }
 
@@ -35,7 +37,7 @@ public class MainTest {
             assertFalse(Files.exists(pathToBeDeleted));
         }
 
-        String usage = Main.convertSchemas(new String[]{outputFolder, "src/test/resources/raml/schemas"});
+        String usage = RamltoJsonSchemaConverter.convertSchemas(new String[]{outputFolder, "src/test/resources/raml/schemas"});
 
         assertTrue(usage.isEmpty());
         assertTrue(Files.exists(Paths.get(outputFolder, "Agent.json")));
@@ -43,13 +45,16 @@ public class MainTest {
         assertTrue(Files.exists(Paths.get(outputFolder, "AgentInRole.json")));
     }
 
-    @Test
+    /*@Test
     public void verifyPropertiesMergedInJsonSchema() throws IOException {
-        String jsonFolderPath = "jsonFiles";
-        Path schemaFolderPath = Paths.get("src/test/resources/raml/schemas");
-        String outputFolder = "target/schemas";
+        RamlSchemaParser ramlSchemaParser = new RamlSchemaParser();
+        DirectoryUtils directoryUtils = new DirectoryUtils();
 
-        //String usage = Main.convertSchemas(new String[]{outputFolder, "src/test/resources/raml/schemas"});
+        Path jsonFilesLocation = directoryUtils.resolveRelativeFilePath(DirectoryUtils.TODO_FOLDER);
+        Path schemaFolderPath = directoryUtils.resolveRelativeFilePath("src/test/resources/raml/schemas");
+        Path outputFolder = directoryUtils.resolveRelativeFilePath("target/schemas");
+
+        //String usage = RamltoJsonSchemaConverter.convertSchemas(new String[]{outputFolder, "src/test/resources/raml/schemas"});
 
        // assertTrue(usage.isEmpty());
         LinkedHashMap<Object, Object> jsonSchemaDocument = new LinkedHashMap();
@@ -58,10 +63,10 @@ public class MainTest {
         LinkedHashMap<Object, Object> jsonSchemaProperties = new LinkedHashMap<>();
         LinkedHashMap<Object, Object> jsonProperties = new LinkedHashMap<>();
 
-        Main.createPlainJsonFromRaml(schemaFolderPath, Paths.get(jsonFolderPath));
+        ramlSchemaParser.createJsonText(schemaFolderPath, jsonFilesLocation);
 
-        if(Files.exists(Paths.get(outputFolder, "Agent.json"))){
-            Path mergedJsonSchemaPath =Paths.get(outputFolder, "Agent.json");
+        if(directoryUtils.resolveRelativeFolderPath(outputFolder.toString(), "Agent.json").toFile().exists()){
+            Path mergedJsonSchemaPath =directoryUtils.resolveRelativeFolderPath(outputFolder.toString(), "Agent.json");
             String mergedFileContent = "";
 
             mergedFileContent = new String(Files.readAllBytes(mergedJsonSchemaPath));
@@ -98,6 +103,6 @@ public class MainTest {
             }
 
         }
-        Main.deleteFiles(Paths.get(jsonFolderPath));
-    }
+        RamltoJsonSchemaConverter.deleteFiles(Paths.get(jsonFolderPath));
+    }*/
 }

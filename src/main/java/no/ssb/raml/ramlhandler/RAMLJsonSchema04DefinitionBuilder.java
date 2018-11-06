@@ -1,4 +1,4 @@
-package no.ssb.raml;
+package no.ssb.raml.ramlhandler;
 
 import org.raml.v2.api.RamlModelBuilder;
 import org.raml.v2.api.RamlModelResult;
