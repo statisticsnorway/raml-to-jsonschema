@@ -19,7 +19,9 @@ import static no.ssb.raml.utils.DirectoryUtils.*;
 
 public class RamltoJsonSchemaConverter {
 
+    //parser user to parse raml file to json
     static RamlSchemaParser ramlSchemaParser = new RamlSchemaParser();
+
     static JsonSchemaHandler jsonSchemaHandler = new JsonSchemaHandler();
 
     private static String printUsage() {
@@ -56,7 +58,6 @@ public class RamltoJsonSchemaConverter {
         //create output folder to store converted JsonSchemas
         Path outputFolderPath = createFolder(outputFolder);
 
-
         for (int i = 1; i < args.length; i++) {
             String arg = args[i];
             Path path = Paths.get(arg);
@@ -87,6 +88,7 @@ public class RamltoJsonSchemaConverter {
             }
         }
 
+        //delete temporary folder ( plain json files) after merging
         DirectoryUtils.deleteFiles(jsonFilesLocation);
         return "";
     }

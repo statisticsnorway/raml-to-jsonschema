@@ -13,6 +13,9 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+/**
+ * parse raml file to json format
+ */
 public class RamlSchemaParser {
 
     static DirectoryUtils directoryUtils = new DirectoryUtils();
@@ -80,7 +83,9 @@ public class RamlSchemaParser {
     }
 
     /**
-     * @param yaml
+     * Convert yaml file to plain Json in string format
+     *
+     * @param yaml: Yaml file to be parsed
      * @return
      */
     public String convertYamlToJson(String yaml) {

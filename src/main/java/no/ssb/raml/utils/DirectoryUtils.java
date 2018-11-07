@@ -32,13 +32,13 @@ public class DirectoryUtils {
         return Paths.get(folderLocation).toAbsolutePath().resolve(relativeFile);
     }
 
-    public static Path getSchemaFolderLocation(String relativePath){
+    public static Path getSchemaFolderLocation(String relativePath) {
         int schemasStringIndex = relativePath.lastIndexOf(JSON_SCHEMA_FOLDER);
         String schemasLocation = relativePath.substring(0, schemasStringIndex + JSON_SCHEMA_FOLDER.length());
         return currentPath().resolve(schemasLocation);
     }
 
-    public static Path createFolder(Path folderPath){
+    public static Path createFolder(Path folderPath) {
         if (!folderPath.toFile().exists()) {
             boolean created = folderPath.toFile().mkdirs();
             if (!created) {
@@ -59,7 +59,7 @@ public class DirectoryUtils {
         return p.toString().substring(p.toString().lastIndexOf(File.separatorChar) + 1);
     }
 
-    public static String readFileContent(Path fileLocation){
+    public static String readFileContent(Path fileLocation) {
         String content = "";
         try {
             content = new String(Files.readAllBytes(resolveRelativeFilePath(fileLocation.toString())));
