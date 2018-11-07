@@ -1,39 +1,30 @@
 #%RAML 1.0 Library
 uses:
-  MultilingualText: ../basetypes/MultilingualText.raml
+  IdentifiableArtefact: ./abstract/IdentifiableArtefact.raml
+  #Agent: Agent.raml
+  #Role: Role.raml
 
 types:
 
   AgentInRole:
     description: Relate Agent and Role.
+    type: IdentifiableArtefact.IdentifiableArtefact
     properties:
-      id:
-        type: string
-        description: The unique identifier (GUID) of the Role and Agent(s) acting in this Role
-        displayName: Unik identifikator (GUID) for rollen og aktørene i denne rollen
-        #example: d1f8e3b7-0eb3-4a6d-91bb-a7451649f2f6
-
-      agentInRoleDescription?:
-        type: MultilingualText.MultilingualText[]
-        description: The description of the Role and Agent(s) acting in this Role
-        displayName: Beskrivelse av rollen og aktører i denne rollen
-        #example:
-        #  - { languageCode: nb, languageText: Disse objektene eies av A300 og A700 i fellesskap }
-
       role:
         type: string
         description: The role
         displayName: Rolle
-
-      _link_property_role_to_domain_Role:
-        type: nil
-        required: false
+      _link_property_role?:
+        properties:
+          Role?: nil
 
       agents:
         type: string[]
         description: Agent(s) acting in the Role
         displayName: Aktøren(e) i rollen
+      _link_property_agents?:
+        properties:
+          Agent?: nil
 
-      _link_property_agents_to_domain_Agent:
-        type: nil
-        required: false
+
+    example: !include ../examples/AgentInRoleExample.json
