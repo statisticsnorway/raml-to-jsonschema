@@ -1,11 +1,10 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>no.ssb.raml</groupId>
     <artifactId>raml-to-jsonschema</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.2</version>
     <packaging>jar</packaging>
     <name>RAML to JSON Schema</name>
 
@@ -26,7 +25,7 @@
     <scm>
         <connection>scm:git:git://github.com/statisticsnorway/raml-to-jsonschema.git</connection>
         <developerConnection>scm:git:git@github.com:statisticsnorway/raml-to-jsonschema.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v0.2</tag>
     </scm>
 
     <repositories>
@@ -115,8 +114,7 @@
                 <version>3.1.1</version>
                 <configuration>
                     <transformers>
-                        <transformer
-                                implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                             <mainClass>no.ssb.raml.RamltoJsonSchemaConverter</mainClass>
                         </transformer>
                     </transformers>
