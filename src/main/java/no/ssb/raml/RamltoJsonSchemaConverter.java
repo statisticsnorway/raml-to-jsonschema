@@ -30,7 +30,6 @@ public class RamltoJsonSchemaConverter {
                 ".%n%n");
     }
 
-
     public static void main(String[] args) {
         try {
             String output = convertSchemas(args);
@@ -51,15 +50,15 @@ public class RamltoJsonSchemaConverter {
         Path schemaFolder = resolveRelativeFilePath(args[1]);
         Path schemasLocation = getSchemaFolderLocation(schemaFolder.toString());
 
-        Path temporaryJsonFileFolder = null;
+        Path jsonFilesLocation = null;
         try {
-            temporaryJsonFileFolder = Files.createTempDirectory(DirectoryUtils.JSON_TEMP_FOLDER);
+            jsonFilesLocation = Files.createTempDirectory(DirectoryUtils.JSON_TEMP_FOLDER);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         //convert Raml schemas to plain json files. These will be used to merge properties
-        ramlSchemaParser.createJsonText(schemasLocation, temporaryJsonFileFolder);
+        ramlSchemaParser.createJsonText(schemasLocation, jsonFilesLocation);
 
         //create output folder to store converted JsonSchemas
         Path outputFolderPath = createFolder(outputFolder);
@@ -83,19 +82,19 @@ public class RamltoJsonSchemaConverter {
             }
             if (file.isFile()) {
                 try {
-                    convertRamlToJsonSchema(outputFolderPath, temporaryJsonFileFolder, arg);
+                    convertRamlToJsonSchema(outputFolderPath, jsonFilesLocation, arg);
                 } catch (RuntimeException e) {
                     System.err.println("FILE: " + arg);
                     throw e;
                 }
             } else {
                 //parse directory
-                parseDirectoryFiles(outputFolderPath, temporaryJsonFileFolder , arg);
+                parseDirectoryFiles(outputFolderPath, jsonFilesLocation , arg);
             }
         }
 
         //delete temporary file when the program is exited
-        DirectoryUtils.deleteOnExit(temporaryJsonFileFolder);
+        DirectoryUtils.deleteOnExit(jsonFilesLocation);
         return "";
     }
 

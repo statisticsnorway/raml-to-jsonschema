@@ -12,11 +12,15 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class JsonSchemaHandler {
 
     private static final String DEFINITION_TAG = "definitions";
     private static final String PROPERTIES_TAG = "properties";
+
+    private final static Logger logger = Logger.getLogger(JsonSchemaHandler.class.getName());
 
     /**
      * To add missing properties in JsonSchema
@@ -33,8 +37,8 @@ public class JsonSchemaHandler {
         LinkedHashMap<Object, Object> jsonSchemaDocument = new LinkedHashMap();
         LinkedHashMap<Object, Object> jsonSchemaDefinitions = new LinkedHashMap();
         LinkedHashMap<Object, Object> sourceJsonDocument = new LinkedHashMap();
-
         ObjectMapper oMapper = new ObjectMapper();
+        String sourceJson = "";
 
         if (jsonSchemaDocumentObject instanceof LinkedHashMap) {
             jsonSchemaDocument = oMapper.convertValue(jsonSchemaDocumentObject, LinkedHashMap.class);
@@ -47,20 +51,28 @@ public class JsonSchemaHandler {
                     LinkedHashMap.class);
         }
 
+        //get json file form temporary location
         Path jsonFileLocation = DirectoryUtils.resolveRelativeFolderPath(jsonFilesPath.toString(), jsonSchema04.getKey() + ".json");
 
-        String sourceJson = DirectoryUtils.readFileContent(jsonFileLocation);
+        if (jsonFileLocation.toFile().exists()) {
+            sourceJson = DirectoryUtils.readFileContent(jsonFileLocation);
+            Object sourceJsonDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(sourceJson);
 
-        Object sourceJsonDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(sourceJson);
-        if (sourceJsonDocumentObject instanceof LinkedHashMap) {
-            sourceJsonDocument = oMapper.convertValue(sourceJsonDocumentObject, LinkedHashMap.class);
+            if (sourceJsonDocumentObject instanceof LinkedHashMap) {
+                sourceJsonDocument = oMapper.convertValue(sourceJsonDocumentObject, LinkedHashMap.class);
+            }
+
+            //merge domain level properties(Role: displayName, description etc)
+            mergeDomainLevelProperties(modifiedJsonSchema, jsonSchemaDefinitions, sourceJsonDocument);
+
+            //merge properties for all the domain mentioned in the uses section in raml file
+            mergePropertiesFromRamlUses(modifiedJsonSchema, jsonSchemaDocument, sourceJsonDocument, jsonFilesPath);
+
+        } else {
+            logger.log(Level.WARNING, "Raml file {0} cannot to be converted to json file {1}. " + "A complete json" +
+                            " schema with set of all properties cannot be created! ",
+                    new Object[]{jsonSchema04.getKey() + ".raml", jsonSchema04.getKey() + ".json"});
         }
-
-        //merge domain level properties(Role: displayName, description etc)
-        mergeDomainLevelProperties(modifiedJsonSchema, jsonSchemaDefinitions, sourceJsonDocument);
-
-        //merge properties for all the domain mentioned in the uses section in raml file
-        mergePropertiesFromRamlUses(modifiedJsonSchema, jsonSchemaDocument, sourceJsonDocument, jsonFilesPath);
 
         //merge properties for all the definitions mentioned in JsonSchema
         mergePropertiesInJsonSchemaDefinitions(modifiedJsonSchema, jsonSchemaDocument, jsonSchemaDefinitions, jsonFilesPath);
@@ -76,12 +88,12 @@ public class JsonSchemaHandler {
      * @param jsonSchemaDefinitions
      */
     public void mergePropertiesInJsonSchemaDefinitions(DocumentContext modifiedJsonSchema,
-                                                              Map<Object, Object> jsonSchemaDocument,
-                                                              Map<Object, Object> jsonSchemaDefinitions,
-                                                              Path jsonFilesPath) {
+                                                       Map<Object, Object> jsonSchemaDocument,
+                                                       Map<Object, Object> jsonSchemaDefinitions,
+                                                       Path jsonFilesPath) {
         //parse each and every definition from JsonSchema
         jsonSchemaDefinitions.forEach((definition, value) -> parseProperties(modifiedJsonSchema, jsonSchemaDocument,
-                                                                             definition.toString(), jsonFilesPath));
+                definition.toString(), jsonFilesPath));
     }
 
     /**
@@ -92,8 +104,8 @@ public class JsonSchemaHandler {
      * @param sourceJsonDocument
      */
     public void mergePropertiesFromRamlUses(DocumentContext modifiedJsonSchema,
-                                                   Map<Object, Object> jsonSchemaDocument,
-                                                   Map<Object, Object> sourceJsonDocument,
+                                            Map<Object, Object> jsonSchemaDocument,
+                                            Map<Object, Object> sourceJsonDocument,
                                             Path jsonFilesPath) {
 
         LinkedHashMap<Object, Object> jsonUses = new LinkedHashMap();
@@ -121,8 +133,8 @@ public class JsonSchemaHandler {
      * @param sourceJsonDocument:    properties of definition in plain Json
      */
     public void mergeDomainLevelProperties(DocumentContext modifiedJsonSchema,
-                                                  Map<Object, Object> jsonSchemaDefinitions,
-                                                  Map<Object, Object> sourceJsonDocument) {
+                                           Map<Object, Object> jsonSchemaDefinitions,
+                                           Map<Object, Object> sourceJsonDocument) {
         LinkedHashMap<Object, Object> jsonDomainProperties = new LinkedHashMap();
         LinkedHashMap<Object, Object> jsonSchemaDomainProperties = new LinkedHashMap();
 
@@ -133,23 +145,27 @@ public class JsonSchemaHandler {
             jsonDomainProperties = oMapper.convertValue(typesObject, LinkedHashMap.class);
         }
 
+        Object schemaDefinitionsObject = null;
+        String jsonPath = "";
+
         List<Object> types = new ArrayList(jsonDomainProperties.keySet());
-        Object schemaDefinitionsObject = jsonSchemaDefinitions.get(types.get(0));
 
-        if (schemaDefinitionsObject instanceof LinkedHashMap) {
-            jsonSchemaDomainProperties = oMapper.convertValue(schemaDefinitionsObject, LinkedHashMap.class);
-        }
+        if (!types.isEmpty() && types.size() > 0) {
+            schemaDefinitionsObject = jsonSchemaDefinitions.get(types.get(0));
+            jsonDomainProperties = (LinkedHashMap) jsonDomainProperties.get(types.get(0));
+            jsonPath = "$..definitions." + types.get(0);
 
-        jsonDomainProperties = (LinkedHashMap) jsonDomainProperties.get(types.get(0));
-        LinkedHashMap<Object, Object> finalJsonSchemaDomainProperties = jsonSchemaDomainProperties;
-        jsonDomainProperties.forEach((property, value) -> {
-            if (!finalJsonSchemaDomainProperties.containsKey(property)) {
-                finalJsonSchemaDomainProperties.put(property, value);
+            if (schemaDefinitionsObject instanceof LinkedHashMap) {
+                jsonSchemaDomainProperties = oMapper.convertValue(schemaDefinitionsObject, LinkedHashMap.class);
             }
-
-        });
-        String jsonPath = "$..definitions." + types.get(0);
-        modifiedJsonSchema.set(jsonPath, jsonSchemaDomainProperties);
+            LinkedHashMap<Object, Object> finalJsonSchemaDomainProperties = jsonSchemaDomainProperties;
+            jsonDomainProperties.forEach((property, value) -> {
+                if (!finalJsonSchemaDomainProperties.containsKey(property)) {
+                    finalJsonSchemaDomainProperties.put(property, value);
+                }
+            });
+            modifiedJsonSchema.set(jsonPath, jsonSchemaDomainProperties);
+        }
     }
 
     /**
@@ -160,55 +176,70 @@ public class JsonSchemaHandler {
      * @param dependentSchema
      */
     public void parseProperties(DocumentContext modifiedJsonSchema, Map<Object, Object> jsonSchemaDocument,
-                                       String dependentSchema, Path jsonFilesPath) {
+                                String dependentSchema, Path jsonFilesPath) {
         ObjectMapper oMapper = new ObjectMapper();
+
+        String jsonContent = "";
 
         // get plain json for the required Json schema ( Role, Agent etc)
         Path jsonFileLocation = DirectoryUtils.resolveRelativeFolderPath(jsonFilesPath.toString(), dependentSchema + ".json");
-
         if (jsonFileLocation.toFile().exists()) {
-            String jsonContent = "";
-
-            LinkedHashMap<Object, Object> jsonDocument = new LinkedHashMap();
-            LinkedHashMap<Object, Object> jsonProperties = new LinkedHashMap();
-            LinkedHashMap<Object, Object> jsonSchemaProperties = new LinkedHashMap();
-            LinkedHashMap<Object, Object> schemaDefinitions = new LinkedHashMap();
-
             jsonContent = DirectoryUtils.readFileContent(jsonFileLocation);
-
-            Object jsonObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonContent);
-            if (jsonObject instanceof LinkedHashMap) {
-                jsonDocument = oMapper.convertValue(jsonObject, LinkedHashMap.class);
-            }
-
-            //get domain name for which merging is to be performed
-            String domainName = jsonSchemaDocument.get("$ref").toString().substring(jsonSchemaDocument.
-                    get("$ref").toString().lastIndexOf('/') + 1);
-
-            Object definitionsObject = jsonSchemaDocument.get(DEFINITION_TAG);
-            if (definitionsObject instanceof LinkedHashMap) {
-                schemaDefinitions = oMapper.convertValue(definitionsObject, LinkedHashMap.class);
-            }
-
-            if (schemaDefinitions.containsKey(dependentSchema)) {
-                domainName = dependentSchema;
-            }
-
-            LinkedHashMap<Object, Object> types = JsonPath.read(jsonDocument, "$.types."
-                    + dependentSchema);
-            if (types.containsKey(PROPERTIES_TAG) && (!(types.get(PROPERTIES_TAG) instanceof String) ||
-                    !types.get(PROPERTIES_TAG).equals(""))) {
-                jsonProperties = JsonPath.read(types, PROPERTIES_TAG);
-            }
-
-            LinkedHashMap<Object, Object> domain = JsonPath.read(jsonSchemaDocument, "$.definitions."
-                    + domainName);
-            if (domain.containsKey(PROPERTIES_TAG)) {
-                jsonSchemaProperties = JsonPath.read(domain, PROPERTIES_TAG);
-            }
-            mergeJson(modifiedJsonSchema, jsonProperties, jsonSchemaProperties, domainName);
+        } else {
+            logger.log(Level.WARNING, "Cannot find json file {0}. " + "A complete json schema with set of" +
+                    " all properties cannot be created! ", new Object[]{dependentSchema + ".json"});
         }
 
+        LinkedHashMap<Object, Object> jsonDocument = new LinkedHashMap();
+        LinkedHashMap<Object, Object> jsonProperties = new LinkedHashMap();
+        LinkedHashMap<Object, Object> jsonSchemaProperties = new LinkedHashMap();
+        LinkedHashMap<Object, Object> schemaDefinitions = new LinkedHashMap();
+        LinkedHashMap<Object, Object> types = new LinkedHashMap();
+
+
+        Object jsonObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonContent);
+        if (jsonObject instanceof LinkedHashMap) {
+            jsonDocument = oMapper.convertValue(jsonObject, LinkedHashMap.class);
+        }
+
+        if(jsonDocument.containsKey("types")){
+            Object typesObject = JsonPath.read(jsonDocument, "$.types");
+            if (typesObject instanceof LinkedHashMap) {
+                types = oMapper.convertValue(typesObject, LinkedHashMap.class);
+            }
+        }
+
+        if (types.size() > 0) {
+            Object schemaType = JsonPath.read(jsonDocument, "$.types." + dependentSchema);
+            types = oMapper.convertValue(schemaType, LinkedHashMap.class);
+        }else {
+            logger.log(Level.WARNING,"Raml file {0} doesn't contain type section." +
+                    " Generated Json schema will miss some properties for it.", dependentSchema);
+        }
+
+        //get domain name for which merging is to be performed
+        String domainName = jsonSchemaDocument.get("$ref").toString().substring(jsonSchemaDocument.
+                get("$ref").toString().lastIndexOf('/') + 1);
+
+        Object definitionsObject = jsonSchemaDocument.get(DEFINITION_TAG);
+        if (definitionsObject instanceof LinkedHashMap) {
+            schemaDefinitions = oMapper.convertValue(definitionsObject, LinkedHashMap.class);
+        }
+
+        if (schemaDefinitions.containsKey(dependentSchema)) {
+            domainName = dependentSchema;
+        }
+
+        if (types.containsKey(PROPERTIES_TAG) && (!(types.get(PROPERTIES_TAG) instanceof String) ||
+                !types.get(PROPERTIES_TAG).equals(""))) {
+            jsonProperties = JsonPath.read(types, PROPERTIES_TAG);
+        }
+
+        LinkedHashMap<Object, Object> domain = JsonPath.read(jsonSchemaDocument, "$.definitions." + domainName);
+        if (domain.containsKey(PROPERTIES_TAG)) {
+            jsonSchemaProperties = JsonPath.read(domain, PROPERTIES_TAG);
+        }
+        mergeJson(modifiedJsonSchema, jsonProperties, jsonSchemaProperties, domainName);
     }
 
     /**
@@ -220,7 +251,7 @@ public class JsonSchemaHandler {
      * @param domainName:           domain for which the properties needs to be merged
      */
     public void mergeJson(DocumentContext mergedJsonSchema, Map<Object, Object> jsonProperties,
-                                 Map<Object, Object> jsonSchemaProperties, String domainName) {
+                          Map<Object, Object> jsonSchemaProperties, String domainName) {
         jsonProperties.forEach((property, value) -> {
             Object propertyObject = property.toString().replaceAll("[?]", "");
             if (jsonSchemaProperties.containsKey(propertyObject)) {
