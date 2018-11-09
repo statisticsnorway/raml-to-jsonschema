@@ -41,7 +41,7 @@ public class DirectoryUtils {
     }
 
     public static Path createFolder(Path folderPath) {
-        if (!folderPath.toFile().exists()) {
+        if (!folderPath.toFile().getAbsoluteFile().exists()) {
             boolean created = folderPath.toFile().mkdirs();
             if (!created) {
                 System.err.format("Folder '%s' could not be created.\n", folderPath.toString());
@@ -95,7 +95,7 @@ public class DirectoryUtils {
     }
 
     public static void delete(Path path) {
-        if (!path.toFile().exists()) {
+        if (!path.toFile().getAbsoluteFile().exists()) {
             return;
         }
 

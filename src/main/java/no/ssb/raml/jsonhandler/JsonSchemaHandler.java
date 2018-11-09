@@ -54,7 +54,7 @@ public class JsonSchemaHandler {
         //get json file form temporary location
         Path jsonFileLocation = DirectoryUtils.resolveRelativeFolderPath(jsonFilesPath.toString(), jsonSchema04.getKey() + ".json");
 
-        if (jsonFileLocation.toFile().exists()) {
+        if (jsonFileLocation.toFile().getAbsoluteFile().exists()) {
             sourceJson = DirectoryUtils.readFileContent(jsonFileLocation);
             Object sourceJsonDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(sourceJson);
 
@@ -183,7 +183,7 @@ public class JsonSchemaHandler {
 
         // get plain json for the required Json schema ( Role, Agent etc)
         Path jsonFileLocation = DirectoryUtils.resolveRelativeFolderPath(jsonFilesPath.toString(), dependentSchema + ".json");
-        if (jsonFileLocation.toFile().exists()) {
+        if (jsonFileLocation.toFile().getAbsoluteFile().exists()) {
             jsonContent = DirectoryUtils.readFileContent(jsonFileLocation);
         } else {
             logger.log(Level.WARNING, "Cannot find json file {0}. " + "A complete json schema with set of" +
@@ -213,7 +213,7 @@ public class JsonSchemaHandler {
             Object schemaType = JsonPath.read(jsonDocument, "$.types." + dependentSchema);
             types = oMapper.convertValue(schemaType, LinkedHashMap.class);
         }else {
-            logger.log(Level.WARNING,"Raml file {0} doesn't contain type section." +
+            logger.log(Level.WARNING,"Cannot read type section from Json file {0}." +
                     " Generated Json schema will miss some properties for it.", dependentSchema);
         }
 
