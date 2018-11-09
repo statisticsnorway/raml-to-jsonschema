@@ -30,10 +30,10 @@ public class RamlSchemaParser {
      * To create plain JSON files from Raml files
      *
      * @param schemaLocation: path where raml files are stored
-     * @param targetLocation: path where json files will be created
      */
-    public void createJsonText(Path schemaLocation, Path targetLocation) {
+    public void createJsonText(Path schemaLocation, Path jsonFilesLocation) {
         Pattern endsWithRamlPattern = Pattern.compile("(.*)[.][Rr][Aa][Mm][Ll]");
+
 
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(schemaLocation)) {
             stream.forEach(path -> {
@@ -44,19 +44,15 @@ public class RamlSchemaParser {
                             String schemaName = directoryUtils.getName(path);
                             String schemaFileName = schemaName.substring(0, schemaName.lastIndexOf('.'));
 
-                            File jsonFile = new File(targetLocation.toFile(), schemaFileName);
+                            File jsonFile = new File(jsonFilesLocation.toFile(), schemaFileName);
 
-
-                            if (!targetLocation.toFile().exists()) {
-                                targetLocation.toFile().mkdir();
-                            }
                             DirectoryUtils.writeTextToFile(plainJson, jsonFile);
                         } catch (RuntimeException e) {
                             System.err.println("FILE: " + path.toString());
                             throw e;
                         }
                     } else {
-                        createJsonText(path, targetLocation);
+                        createJsonText(path, jsonFilesLocation);
                     }
                 }
             });

@@ -24,7 +24,7 @@ public class JsonSchemaHandler {
      * @param jsonSchema04: JsonSchema where properties needs to be merged\
      * @return
      */
-    public DocumentContext addMissingJsonPropertiesInSchema(Map.Entry<String, String> jsonSchema04) {
+    public DocumentContext addMissingJsonPropertiesInSchema(Map.Entry<String, String> jsonSchema04, Path jsonFilesPath) {
 
         DocumentContext modifiedJsonSchema = JsonPath.using(Configuration.defaultConfiguration()).parse(jsonSchema04.getValue());
 
@@ -47,7 +47,7 @@ public class JsonSchemaHandler {
                     LinkedHashMap.class);
         }
 
-        Path jsonFileLocation = DirectoryUtils.resolveRelativeFolderPath(DirectoryUtils.JSON_TEMP_FOLDER, jsonSchema04.getKey() + ".json");
+        Path jsonFileLocation = DirectoryUtils.resolveRelativeFolderPath(jsonFilesPath.toString(), jsonSchema04.getKey() + ".json");
 
         String sourceJson = DirectoryUtils.readFileContent(jsonFileLocation);
 
@@ -60,10 +60,10 @@ public class JsonSchemaHandler {
         mergeDomainLevelProperties(modifiedJsonSchema, jsonSchemaDefinitions, sourceJsonDocument);
 
         //merge properties for all the domain mentioned in the uses section in raml file
-        mergePropertiesFromRamlUses(modifiedJsonSchema, jsonSchemaDocument, sourceJsonDocument);
+        mergePropertiesFromRamlUses(modifiedJsonSchema, jsonSchemaDocument, sourceJsonDocument, jsonFilesPath);
 
         //merge properties for all the definitions mentioned in JsonSchema
-        mergePropertiesInJsonSchemaDefinitions(modifiedJsonSchema, jsonSchemaDocument, jsonSchemaDefinitions);
+        mergePropertiesInJsonSchemaDefinitions(modifiedJsonSchema, jsonSchemaDocument, jsonSchemaDefinitions, jsonFilesPath);
 
         return modifiedJsonSchema;
     }
@@ -77,9 +77,11 @@ public class JsonSchemaHandler {
      */
     public void mergePropertiesInJsonSchemaDefinitions(DocumentContext modifiedJsonSchema,
                                                               Map<Object, Object> jsonSchemaDocument,
-                                                              Map<Object, Object> jsonSchemaDefinitions) {
+                                                              Map<Object, Object> jsonSchemaDefinitions,
+                                                              Path jsonFilesPath) {
         //parse each and every definition from JsonSchema
-        jsonSchemaDefinitions.forEach((definition, value) -> parseProperties(modifiedJsonSchema, jsonSchemaDocument, definition.toString()));
+        jsonSchemaDefinitions.forEach((definition, value) -> parseProperties(modifiedJsonSchema, jsonSchemaDocument,
+                                                                             definition.toString(), jsonFilesPath));
     }
 
     /**
@@ -91,7 +93,8 @@ public class JsonSchemaHandler {
      */
     public void mergePropertiesFromRamlUses(DocumentContext modifiedJsonSchema,
                                                    Map<Object, Object> jsonSchemaDocument,
-                                                   Map<Object, Object> sourceJsonDocument) {
+                                                   Map<Object, Object> sourceJsonDocument,
+                                            Path jsonFilesPath) {
 
         LinkedHashMap<Object, Object> jsonUses = new LinkedHashMap();
         if (sourceJsonDocument.containsKey("uses")) {
@@ -105,7 +108,7 @@ public class JsonSchemaHandler {
 
         while (jsonUsesListIterator.hasNext()) {
             String domainObject = (String) jsonUsesListIterator.next();
-            parseProperties(modifiedJsonSchema, jsonSchemaDocument, domainObject);
+            parseProperties(modifiedJsonSchema, jsonSchemaDocument, domainObject, jsonFilesPath);
         }
 
     }
@@ -157,11 +160,11 @@ public class JsonSchemaHandler {
      * @param dependentSchema
      */
     public void parseProperties(DocumentContext modifiedJsonSchema, Map<Object, Object> jsonSchemaDocument,
-                                       String dependentSchema) {
+                                       String dependentSchema, Path jsonFilesPath) {
         ObjectMapper oMapper = new ObjectMapper();
 
         // get plain json for the required Json schema ( Role, Agent etc)
-        Path jsonFileLocation = DirectoryUtils.resolveRelativeFolderPath(DirectoryUtils.JSON_TEMP_FOLDER, dependentSchema + ".json");
+        Path jsonFileLocation = DirectoryUtils.resolveRelativeFolderPath(jsonFilesPath.toString(), dependentSchema + ".json");
 
         if (jsonFileLocation.toFile().exists()) {
             String jsonContent = "";

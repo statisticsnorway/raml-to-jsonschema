@@ -48,9 +48,18 @@ public class RamltoJsonSchemaConverterTest {
     public void verifyPropertiesMergedInJsonSchema() throws IOException {
         RamlSchemaParser ramlSchemaParser = new RamlSchemaParser();
 
-        Path jsonFilesLocation = DirectoryUtils.resolveRelativeFilePath(DirectoryUtils.JSON_TEMP_FOLDER);
         Path schemaFolderPath = DirectoryUtils.resolveRelativeFilePath("src/test/resources/raml/schemas");
         Path outputFolder = DirectoryUtils.resolveRelativeFilePath("target/schemas");
+
+        Path temporaryJsonFileFolder = null;
+        try {
+            temporaryJsonFileFolder = Files.createTempDirectory("jsonFiles");
+            //delete temporary file when the program is exited
+            temporaryJsonFileFolder.toFile().deleteOnExit();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         RamltoJsonSchemaConverter.convertSchemas(new String[]{outputFolder.toString(), "src/test/resources/raml/schemas"});
 
@@ -61,7 +70,7 @@ public class RamltoJsonSchemaConverterTest {
         LinkedHashMap<Object, Object> jsonSchemaProperties = new LinkedHashMap<>();
         LinkedHashMap<Object, Object> jsonProperties = new LinkedHashMap<>();
 
-        ramlSchemaParser.createJsonText(schemaFolderPath, jsonFilesLocation);
+        ramlSchemaParser.createJsonText(schemaFolderPath, temporaryJsonFileFolder);
 
         if(DirectoryUtils.resolveRelativeFolderPath(outputFolder.toString(), "Agent.json").toFile().exists()){
             Path mergedJsonSchema = DirectoryUtils.resolveRelativeFolderPath(outputFolder.toString(), "Agent.json");
@@ -75,8 +84,8 @@ public class RamltoJsonSchemaConverterTest {
                 jsonSchemaDocument = (LinkedHashMap)oMapper.convertValue(jsonSchemaDocumentObject, LinkedHashMap.class);
             }
 
-            if(DirectoryUtils.resolveRelativeFolderPath(jsonFilesLocation.toString(), "Agent.json").toFile().exists()){
-                Path plainJsonFilePath = DirectoryUtils.resolveRelativeFolderPath(jsonFilesLocation.toString(), "Agent.json");
+            if(DirectoryUtils.resolveRelativeFolderPath(temporaryJsonFileFolder.toString(), "Agent.json").toFile().exists()){
+                Path plainJsonFilePath = DirectoryUtils.resolveRelativeFolderPath(temporaryJsonFileFolder.toString(), "Agent.json");
                 String jsonFileContent = DirectoryUtils.readFileContent(plainJsonFilePath);
 
                 Object jsonDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonFileContent);
@@ -98,7 +107,8 @@ public class RamltoJsonSchemaConverterTest {
                     }
                 });
             }
-            DirectoryUtils.deleteFiles(jsonFilesLocation);
+            //delete temporary file when the program is exited
+            DirectoryUtils.deleteOnExit(temporaryJsonFileFolder);
         }
     }
 }
