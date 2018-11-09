@@ -108,25 +108,27 @@ public class RamltoJsonSchemaConverter {
      */
     private static void parseDirectoryFiles(Path outFolderPath, Path jsonFilesPath, String arg) throws IOException {
         Pattern endsWithRamlPattern = Pattern.compile("(.*)[.][Rr][Aa][Mm][Ll]");
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(arg))) {
-            stream.forEach(p -> {
-                if (!p.getFileName().toString().equalsIgnoreCase("todo")) {
-                    if (endsWithRamlPattern.matcher(p.toString()).matches()) {
-                        try {
-                            convertRamlToJsonSchema(outFolderPath, jsonFilesPath, p.toString());
-                        } catch (RuntimeException e) {
-                            System.err.println("FILE: " + p.toString());
-                            throw e;
-                        }
-                    } else {
-                        try {
-                            parseDirectoryFiles(outFolderPath, jsonFilesPath, p.toString());
-                        } catch (IOException e) {
-                            e.printStackTrace();
+        if (Paths.get(arg).toFile().isDirectory()){
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(arg))) {
+                stream.forEach(p -> {
+                    if (!p.getFileName().toString().equalsIgnoreCase("todo")) {
+                        if (endsWithRamlPattern.matcher(p.toString()).matches()) {
+                            try {
+                                convertRamlToJsonSchema(outFolderPath, jsonFilesPath, p.toString());
+                            } catch (RuntimeException e) {
+                                System.err.println("FILE: " + p.toString());
+                                throw e;
+                            }
+                        } else {
+                            try {
+                                parseDirectoryFiles(outFolderPath, jsonFilesPath, p.toString());
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         }
     }
 
