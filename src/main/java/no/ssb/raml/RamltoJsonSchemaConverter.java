@@ -30,7 +30,6 @@ public class RamltoJsonSchemaConverter {
                 ".%n%n");
     }
 
-
     public static void main(String[] args) {
         try {
             String output = convertSchemas(args);
@@ -50,7 +49,13 @@ public class RamltoJsonSchemaConverter {
         Path outputFolder = resolveRelativeFilePath(args[0]);
         Path schemaFolder = resolveRelativeFilePath(args[1]);
         Path schemasLocation = getSchemaFolderLocation(schemaFolder.toString());
-        Path jsonFilesLocation = resolveRelativeFilePath(JSON_TEMP_FOLDER);
+
+        Path jsonFilesLocation = null;
+        try {
+            jsonFilesLocation = Files.createTempDirectory(DirectoryUtils.JSON_TEMP_FOLDER);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         //convert Raml schemas to plain json files. These will be used to merge properties
         ramlSchemaParser.createJsonText(schemasLocation, jsonFilesLocation);
@@ -84,12 +89,12 @@ public class RamltoJsonSchemaConverter {
                 }
             } else {
                 //parse directory
-                parseDirectoryFiles(outputFolderPath, Paths.get("jsonFiles"), arg);
+                parseDirectoryFiles(outputFolderPath, jsonFilesLocation , arg);
             }
         }
 
-        //delete temporary folder ( plain json files) after merging
-        DirectoryUtils.deleteFiles(jsonFilesLocation);
+        //delete temporary file when the program is exited
+        DirectoryUtils.deleteOnExit(jsonFilesLocation);
         return "";
     }
 
@@ -103,25 +108,27 @@ public class RamltoJsonSchemaConverter {
      */
     private static void parseDirectoryFiles(Path outFolderPath, Path jsonFilesPath, String arg) throws IOException {
         Pattern endsWithRamlPattern = Pattern.compile("(.*)[.][Rr][Aa][Mm][Ll]");
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(arg))) {
-            stream.forEach(p -> {
-                if (!p.getFileName().toString().equalsIgnoreCase("todo")) {
-                    if (endsWithRamlPattern.matcher(p.toString()).matches()) {
-                        try {
-                            convertRamlToJsonSchema(outFolderPath, jsonFilesPath, p.toString());
-                        } catch (RuntimeException e) {
-                            System.err.println("FILE: " + p.toString());
-                            throw e;
-                        }
-                    } else {
-                        try {
-                            parseDirectoryFiles(outFolderPath, jsonFilesPath, p.toString());
-                        } catch (IOException e) {
-                            e.printStackTrace();
+        if (Paths.get(arg).toFile().isDirectory()){
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(arg))) {
+                stream.forEach(p -> {
+                    if (!p.getFileName().toString().equalsIgnoreCase("todo")) {
+                        if (endsWithRamlPattern.matcher(p.toString()).matches()) {
+                            try {
+                                convertRamlToJsonSchema(outFolderPath, jsonFilesPath, p.toString());
+                            } catch (RuntimeException e) {
+                                System.err.println("FILE: " + p.toString());
+                                throw e;
+                            }
+                        } else {
+                            try {
+                                parseDirectoryFiles(outFolderPath, jsonFilesPath, p.toString());
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         }
     }
 
@@ -142,7 +149,7 @@ public class RamltoJsonSchemaConverter {
 
             Path outputFilePath = resolveRelativeFolderPath(outFolderPath.toString(), schemaFileName);
 
-            DocumentContext modifiedJsonSchema = jsonSchemaHandler.addMissingJsonPropertiesInSchema(entry);
+            DocumentContext modifiedJsonSchema = jsonSchemaHandler.addMissingJsonPropertiesInSchema(entry, jsonFilesPath);
 
             DirectoryUtils.writeTextToFile(modifiedJsonSchema.jsonString(), outputFilePath.toFile());
         }

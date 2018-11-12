@@ -30,38 +30,34 @@ public class RamlSchemaParser {
      * To create plain JSON files from Raml files
      *
      * @param schemaLocation: path where raml files are stored
-     * @param targetLocation: path where json files will be created
      */
-    public void createJsonText(Path schemaLocation, Path targetLocation) {
+    public void createJsonText(Path schemaLocation, Path jsonFilesLocation) {
         Pattern endsWithRamlPattern = Pattern.compile("(.*)[.][Rr][Aa][Mm][Ll]");
+        if (schemaLocation.toFile().isDirectory()){
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(schemaLocation)) {
+                stream.forEach(path -> {
+                    if (!path.getFileName().toString().equalsIgnoreCase(DirectoryUtils.TODO_FOLDER)) {
+                        if (endsWithRamlPattern.matcher(path.toString()).matches()) {
+                            try {
+                                String plainJson = convertRamlToPlainJson(path.toString());
+                                String schemaName = directoryUtils.getName(path);
+                                String schemaFileName = schemaName.substring(0, schemaName.lastIndexOf('.'));
 
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(schemaLocation)) {
-            stream.forEach(path -> {
-                if (!path.getFileName().toString().equalsIgnoreCase(DirectoryUtils.TODO_FOLDER)) {
-                    if (endsWithRamlPattern.matcher(path.toString()).matches()) {
-                        try {
-                            String plainJson = convertRamlToPlainJson(path.toString());
-                            String schemaName = directoryUtils.getName(path);
-                            String schemaFileName = schemaName.substring(0, schemaName.lastIndexOf('.'));
+                                File jsonFile = new File(jsonFilesLocation.toFile(), schemaFileName);
 
-                            File jsonFile = new File(targetLocation.toFile(), schemaFileName);
-
-
-                            if (!targetLocation.toFile().exists()) {
-                                targetLocation.toFile().mkdir();
+                                DirectoryUtils.writeTextToFile(plainJson, jsonFile);
+                            } catch (RuntimeException e) {
+                                System.err.println("FILE: " + path.toString());
+                                throw e;
                             }
-                            DirectoryUtils.writeTextToFile(plainJson, jsonFile);
-                        } catch (RuntimeException e) {
-                            System.err.println("FILE: " + path.toString());
-                            throw e;
+                        }else {
+                            createJsonText(path, jsonFilesLocation);
                         }
-                    } else {
-                        createJsonText(path, targetLocation);
                     }
-                }
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
