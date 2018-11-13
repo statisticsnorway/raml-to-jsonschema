@@ -64,7 +64,7 @@ public class DirectoryUtils {
     public static String readFileContent(Path fileLocation) {
         String content = "";
         try {
-            content = new String(Files.readAllBytes(resolveRelativeFilePath(fileLocation.toString())));
+            content = new String(Files.readAllBytes(resolveRelativeFilePath(fileLocation.toString())), StandardCharsets.UTF_8);
         } catch (IOException e) {
             e.printStackTrace();
         }

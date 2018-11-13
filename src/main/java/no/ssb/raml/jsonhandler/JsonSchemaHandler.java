@@ -160,7 +160,9 @@ public class JsonSchemaHandler {
             }
             LinkedHashMap<Object, Object> finalJsonSchemaDomainProperties = jsonSchemaDomainProperties;
             jsonDomainProperties.forEach((property, value) -> {
-                if (!finalJsonSchemaDomainProperties.containsKey(property)) {
+                if (!finalJsonSchemaDomainProperties.containsKey(property) &&
+                        !(property.toString().equalsIgnoreCase("example") ||
+                                (property.toString().equalsIgnoreCase("examples")))) {
                     finalJsonSchemaDomainProperties.put(property, value);
                 }
             });
