@@ -42,6 +42,7 @@ public class RamltoJsonSchemaConverterTest {
         assertTrue(Files.exists(Paths.get(outputFolder, "Agent.json")));
         assertTrue(Files.exists(Paths.get(outputFolder, "Role.json")));
         assertTrue(Files.exists(Paths.get(outputFolder, "AgentInRole.json")));
+        assertTrue(Files.exists(Paths.get(outputFolder, "ProvisionAgreement.json")));
     }
 
     @Test
@@ -73,7 +74,7 @@ public class RamltoJsonSchemaConverterTest {
         ramlSchemaParser.createJsonText(schemaFolderPath, temporaryJsonFileFolder);
 
         if(DirectoryUtils.resolveRelativeFolderPath(outputFolder.toString(), "Agent.json").toFile().exists()){
-            Path mergedJsonSchema = DirectoryUtils.resolveRelativeFolderPath(outputFolder.toString(), "Agent.json");
+            Path mergedJsonSchema = DirectoryUtils.resolveRelativeFolderPath(outputFolder.toString(), "ProvisionAgreement.json");
             String mergedFileContent = "";
 
             mergedFileContent =DirectoryUtils.readFileContent(mergedJsonSchema);
@@ -85,7 +86,7 @@ public class RamltoJsonSchemaConverterTest {
             }
 
             if(DirectoryUtils.resolveRelativeFolderPath(temporaryJsonFileFolder.toString(), "Agent.json").toFile().exists()){
-                Path plainJsonFilePath = DirectoryUtils.resolveRelativeFolderPath(temporaryJsonFileFolder.toString(), "Agent.json");
+                Path plainJsonFilePath = DirectoryUtils.resolveRelativeFolderPath(temporaryJsonFileFolder.toString(), "ProvisionAgreement.json");
                 String jsonFileContent = DirectoryUtils.readFileContent(plainJsonFilePath);
 
                 Object jsonDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonFileContent);
@@ -94,8 +95,8 @@ public class RamltoJsonSchemaConverterTest {
                     jsonDocument = (LinkedHashMap)oMapper.convertValue(jsonDocumentObject, LinkedHashMap.class);
                 }
 
-                jsonProperties = JsonPath.read(jsonDocument, "types.Agent.properties");
-                jsonSchemaProperties = JsonPath.read(jsonSchemaDocument, "definitions.Agent.properties");
+                jsonProperties = JsonPath.read(jsonDocument, "types.ProvisionAgreement.properties");
+                jsonSchemaProperties = JsonPath.read(jsonSchemaDocument, "definitions.ProvisionAgreement.properties");
 
                 LinkedHashMap<Object, Object> finalJsonSchemaProperties = jsonSchemaProperties;
                 jsonProperties.forEach((property, value)->{
