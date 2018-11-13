@@ -48,7 +48,7 @@ It has different ways to express a string. F.e
           }
    ```
   
-  #####Solution 
+  ##Solution 
   
   Explicitly provide the type on the elements
   ```
@@ -95,7 +95,7 @@ It has different ways to express a string. F.e
            "description" : "Har noe med sensivitet og bruk å gjøre. kommer fra GDPR-teamet."
          }
  ```
- #####Solution
+ ##Solution
  ```
    valuation?:
           type: string
