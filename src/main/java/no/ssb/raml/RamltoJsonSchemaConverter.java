@@ -111,19 +111,13 @@ public class RamltoJsonSchemaConverter {
         if (Paths.get(arg).toFile().isDirectory()){
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(arg))) {
                 stream.forEach(p -> {
-                    if (!p.getFileName().toString().equalsIgnoreCase("todo")) {
+                    if (!p.getFileName().toString().equalsIgnoreCase(DirectoryUtils.TODO_FOLDER)) {
                         if (endsWithRamlPattern.matcher(p.toString()).matches()) {
                             try {
                                 convertRamlToJsonSchema(outFolderPath, jsonFilesPath, p.toString());
                             } catch (RuntimeException e) {
                                 System.err.println("FILE: " + p.toString());
                                 throw e;
-                            }
-                        } else {
-                            try {
-                                parseDirectoryFiles(outFolderPath, jsonFilesPath, p.toString());
-                            } catch (IOException e) {
-                                e.printStackTrace();
                             }
                         }
                     }
