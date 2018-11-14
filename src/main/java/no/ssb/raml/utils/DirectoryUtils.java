@@ -64,7 +64,8 @@ public class DirectoryUtils {
     public static String readFileContent(Path fileLocation) {
         String content = "";
         try {
-            content = new String(Files.readAllBytes(resolveRelativeFilePath(fileLocation.toString())), StandardCharsets.UTF_8);
+            content = new String(Files.readAllBytes(resolveRelativeFilePath(fileLocation.toString())),
+                    StandardCharsets.UTF_8);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -75,7 +76,8 @@ public class DirectoryUtils {
         ObjectMapper objectMapper = new ObjectMapper();
         String[] formattedText = {""};
         try {
-            Writer writer = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(file + ".json")), StandardCharsets.UTF_8);
+            Writer writer = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(file + ".json")),
+                    StandardCharsets.UTF_8);
             formattedText[0] = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readTree(plainText));
             writer.write(formattedText[0]);
             writer.flush();
