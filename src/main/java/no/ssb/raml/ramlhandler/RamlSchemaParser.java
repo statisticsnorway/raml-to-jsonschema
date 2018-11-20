@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import no.ssb.raml.utils.DirectoryUtils;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,7 +71,7 @@ public class RamlSchemaParser {
         String content = "";
         String json = "";
         try {
-            content = new String(Files.readAllBytes(Paths.get(ramlFile)));
+            content = new String(Files.readAllBytes(Paths.get(ramlFile)), StandardCharsets.UTF_8);
             json = convertYamlToJson(content);
         } catch (IOException e) {
             e.printStackTrace();
