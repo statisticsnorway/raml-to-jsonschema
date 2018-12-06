@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,6 +20,7 @@ public class JsonSchemaHandler {
 
     private static final String DEFINITION_TAG = "definitions";
     private static final String PROPERTIES_TAG = "properties";
+    private static final String LINK_TAG = "(Link.types)";
 
     private final static Logger logger = Logger.getLogger(JsonSchemaHandler.class.getName());
 
@@ -204,7 +206,7 @@ public class JsonSchemaHandler {
             jsonDocument = oMapper.convertValue(jsonObject, LinkedHashMap.class);
         }
 
-        if(jsonDocument.containsKey("types")){
+        if (jsonDocument.containsKey("types")) {
             Object typesObject = JsonPath.read(jsonDocument, "$.types");
             if (typesObject instanceof LinkedHashMap) {
                 types = oMapper.convertValue(typesObject, LinkedHashMap.class);
@@ -214,8 +216,8 @@ public class JsonSchemaHandler {
         if (types.size() > 0) {
             Object schemaType = JsonPath.read(jsonDocument, "$.types." + dependentSchema);
             types = oMapper.convertValue(schemaType, LinkedHashMap.class);
-        }else {
-            logger.log(Level.WARNING,"Cannot read type section from Json file {0}." +
+        } else {
+            logger.log(Level.WARNING, "Cannot read type section from Json file {0}." +
                     " Generated Json schema will miss some properties for it.", dependentSchema);
         }
 
@@ -241,20 +243,59 @@ public class JsonSchemaHandler {
         if (domain.containsKey(PROPERTIES_TAG)) {
             jsonSchemaProperties = JsonPath.read(domain, PROPERTIES_TAG);
         }
-        mergeJson(modifiedJsonSchema, jsonProperties, jsonSchemaProperties, domainName);
+
+        LinkedHashMap<Object, Object> resolvedJsonProperties = resolveJsonLinks(oMapper.convertValue(jsonProperties, ConcurrentHashMap.class));
+
+        DocumentContext documentContext = mergeJson(modifiedJsonSchema, jsonProperties, jsonSchemaProperties, resolvedJsonProperties, domainName);
+        System.out.println(documentContext);
     }
+
+    private LinkedHashMap<Object, Object> resolveJsonLinks(ConcurrentHashMap<Object, Object> jsonProperties) {
+        ObjectMapper oMapper = new ObjectMapper();
+        LinkedHashMap<Object, Object> newLinkedProperty = new LinkedHashMap<>();
+
+        jsonProperties.forEach((key, value) -> {
+            ConcurrentHashMap<Object, Object> propertyValues = oMapper.convertValue(value, ConcurrentHashMap.class);
+            propertyValues.forEach((property, propertyValue) -> {
+                String keyStr = "";
+                LinkedHashMap<Object, Object> linkedObject = new LinkedHashMap<>();
+
+                if (property.equals(LINK_TAG)) {
+                    System.out.println(key + " : " + value);
+                    System.out.println(property + " : " + propertyValue);
+
+                    LinkedHashMap<Object, Object> linkedPropertyType = new LinkedHashMap<>();
+                    linkedPropertyType.put("type", "null");
+
+                    LinkedHashMap<Object, Object> linkedProperty = new LinkedHashMap<>();
+                    linkedProperty.put(propertyValue, linkedPropertyType);
+
+                    linkedObject.put("type", "object");
+                    linkedObject.put("properties", linkedProperty);
+                    keyStr = "_link_property_" + key.toString().replaceAll("[?]", "");
+                    newLinkedProperty.put(keyStr, linkedObject);
+                    propertyValues.remove(property);
+                    jsonProperties.put(key, propertyValues);
+                    jsonProperties.put(keyStr, linkedObject);
+                }
+            });
+        });
+
+        return oMapper.convertValue(jsonProperties, LinkedHashMap.class);
+    }
+
 
     /**
      * Merge properties from plain Json to Json schema
-     *
-     * @param mergedJsonSchema:     Merged Json schema
-     * @param jsonProperties:       map containing list of all the properties
-     * @param jsonSchemaProperties: map containing list of properties where missing properties to be added
-     * @param domainName:           domain for which the properties needs to be merged
+     *  @param mergedJsonSchema :     Merged Json schema
+     * @param jsonProperties :       map containing list of all the properties
+     * @param jsonSchemaProperties : map containing list of properties where missing properties to be added
+     * @param resolvedJsonProperties
+     * @param domainName :           domain for which the properties needs to be merged
      */
-    public void mergeJson(DocumentContext mergedJsonSchema, Map<Object, Object> jsonProperties,
-                          Map<Object, Object> jsonSchemaProperties, String domainName) {
-        jsonProperties.forEach((property, value) -> {
+    public DocumentContext mergeJson(DocumentContext mergedJsonSchema, Map<Object, Object> jsonProperties,
+                          Map<Object, Object> jsonSchemaProperties, LinkedHashMap<Object, Object> resolvedJsonProperties, String domainName) {
+        resolvedJsonProperties.forEach((property, value) -> {
             Object propertyObject = property.toString().replaceAll("[?]", "");
             if (jsonSchemaProperties.containsKey(propertyObject)) {
                 LinkedHashMap<Object, Object> schemaProperties = new LinkedHashMap();
@@ -278,9 +319,12 @@ public class JsonSchemaHandler {
                     }
 
                 });
+            }else{
+               String jsonPath = "$..definitions." + domainName + ".properties";
+               mergedJsonSchema.put(jsonPath, propertyObject.toString(), value);
             }
-
         });
+        return mergedJsonSchema;
     }
 
 }
