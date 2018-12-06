@@ -216,9 +216,6 @@ public class JsonSchemaHandler {
         if (types.size() > 0) {
             Object schemaType = JsonPath.read(jsonDocument, "$.types." + dependentSchema);
             types = oMapper.convertValue(schemaType, LinkedHashMap.class);
-        } else {
-            logger.log(Level.WARNING, "Cannot read type section from Json file {0}." +
-                    " Generated Json schema will miss some properties for it.", dependentSchema);
         }
 
         //get domain name for which merging is to be performed
