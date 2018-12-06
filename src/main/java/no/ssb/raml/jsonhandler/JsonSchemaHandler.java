@@ -247,7 +247,6 @@ public class JsonSchemaHandler {
         LinkedHashMap<Object, Object> resolvedJsonProperties = resolveJsonLinks(oMapper.convertValue(jsonProperties, ConcurrentHashMap.class));
 
         DocumentContext documentContext = mergeJson(modifiedJsonSchema, jsonProperties, jsonSchemaProperties, resolvedJsonProperties, domainName);
-        System.out.println(documentContext);
     }
 
     private LinkedHashMap<Object, Object> resolveJsonLinks(ConcurrentHashMap<Object, Object> jsonProperties) {
@@ -257,26 +256,24 @@ public class JsonSchemaHandler {
         jsonProperties.forEach((key, value) -> {
             ConcurrentHashMap<Object, Object> propertyValues = oMapper.convertValue(value, ConcurrentHashMap.class);
             propertyValues.forEach((property, propertyValue) -> {
-                String keyStr = "";
                 LinkedHashMap<Object, Object> linkedObject = new LinkedHashMap<>();
 
                 if (property.equals(LINK_TAG)) {
-                    System.out.println(key + " : " + value);
-                    System.out.println(property + " : " + propertyValue);
-
                     LinkedHashMap<Object, Object> linkedPropertyType = new LinkedHashMap<>();
-                    linkedPropertyType.put("type", "null");
-
+                    ArrayList<String> linkedProperties = (ArrayList) propertyValue;
                     LinkedHashMap<Object, Object> linkedProperty = new LinkedHashMap<>();
-                    linkedProperty.put(propertyValue, linkedPropertyType);
 
-                    linkedObject.put("type", "object");
-                    linkedObject.put("properties", linkedProperty);
-                    keyStr = "_link_property_" + key.toString().replaceAll("[?]", "");
-                    newLinkedProperty.put(keyStr, linkedObject);
-                    propertyValues.remove(property);
-                    jsonProperties.put(key, propertyValues);
-                    jsonProperties.put(keyStr, linkedObject);
+                    linkedProperties.forEach((linkProperty) -> {
+                        linkedPropertyType.put("type", "null");
+                        linkedProperty.put(linkProperty, linkedPropertyType);
+                        linkedObject.put("type", "object");
+                        linkedObject.put("properties", linkedProperty);
+                        String keyStr = "_link_property_" + key.toString().replaceAll("[?]", "");
+                        newLinkedProperty.put(keyStr, linkedObject);
+                        propertyValues.remove(property);
+                        jsonProperties.put(key, propertyValues);
+                        jsonProperties.put(keyStr, linkedObject);
+                    });
                 }
             });
         });
@@ -284,17 +281,17 @@ public class JsonSchemaHandler {
         return oMapper.convertValue(jsonProperties, LinkedHashMap.class);
     }
 
-
     /**
      * Merge properties from plain Json to Json schema
-     *  @param mergedJsonSchema :     Merged Json schema
-     * @param jsonProperties :       map containing list of all the properties
-     * @param jsonSchemaProperties : map containing list of properties where missing properties to be added
+     *
+     * @param mergedJsonSchema       :     Merged Json schema
+     * @param jsonProperties         :       map containing list of all the properties
+     * @param jsonSchemaProperties   : map containing list of properties where missing properties to be added
      * @param resolvedJsonProperties
-     * @param domainName :           domain for which the properties needs to be merged
+     * @param domainName             :           domain for which the properties needs to be merged
      */
     public DocumentContext mergeJson(DocumentContext mergedJsonSchema, Map<Object, Object> jsonProperties,
-                          Map<Object, Object> jsonSchemaProperties, LinkedHashMap<Object, Object> resolvedJsonProperties, String domainName) {
+                                     Map<Object, Object> jsonSchemaProperties, LinkedHashMap<Object, Object> resolvedJsonProperties, String domainName) {
         resolvedJsonProperties.forEach((property, value) -> {
             Object propertyObject = property.toString().replaceAll("[?]", "");
             if (jsonSchemaProperties.containsKey(propertyObject)) {
@@ -319,9 +316,9 @@ public class JsonSchemaHandler {
                     }
 
                 });
-            }else{
-               String jsonPath = "$..definitions." + domainName + ".properties";
-               mergedJsonSchema.put(jsonPath, propertyObject.toString(), value);
+            } else {
+                String jsonPath = "$..definitions." + domainName + ".properties";
+                mergedJsonSchema.put(jsonPath, propertyObject.toString(), value);
             }
         });
         return mergedJsonSchema;
