@@ -243,30 +243,26 @@ public class JsonSchemaHandler {
 
         LinkedHashMap<Object, Object> resolvedJsonProperties = resolveJsonLinks(oMapper.convertValue(jsonProperties, ConcurrentHashMap.class));
 
-        DocumentContext documentContext = mergeJson(modifiedJsonSchema, jsonProperties, jsonSchemaProperties, resolvedJsonProperties, domainName);
+        mergeJson(modifiedJsonSchema, jsonProperties, jsonSchemaProperties, resolvedJsonProperties, domainName);
     }
 
     private LinkedHashMap<Object, Object> resolveJsonLinks(ConcurrentHashMap<Object, Object> jsonProperties) {
         ObjectMapper oMapper = new ObjectMapper();
-        LinkedHashMap<Object, Object> newLinkedProperty = new LinkedHashMap<>();
 
         jsonProperties.forEach((key, value) -> {
             ConcurrentHashMap<Object, Object> propertyValues = oMapper.convertValue(value, ConcurrentHashMap.class);
             propertyValues.forEach((property, propertyValue) -> {
                 LinkedHashMap<Object, Object> linkedObject = new LinkedHashMap<>();
-
                 if (property.equals(LINK_TAG)) {
                     LinkedHashMap<Object, Object> linkedPropertyType = new LinkedHashMap<>();
                     ArrayList<String> linkedProperties = (ArrayList) propertyValue;
                     LinkedHashMap<Object, Object> linkedProperty = new LinkedHashMap<>();
-
                     linkedProperties.forEach((linkProperty) -> {
                         linkedPropertyType.put("type", "null");
                         linkedProperty.put(linkProperty, linkedPropertyType);
                         linkedObject.put("type", "object");
                         linkedObject.put("properties", linkedProperty);
                         String keyStr = "_link_property_" + key.toString().replaceAll("[?]", "");
-                        newLinkedProperty.put(keyStr, linkedObject);
                         propertyValues.remove(property);
                         jsonProperties.put(key, propertyValues);
                         jsonProperties.put(keyStr, linkedObject);
