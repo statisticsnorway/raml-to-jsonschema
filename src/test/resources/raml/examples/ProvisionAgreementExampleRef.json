@@ -1,0 +1,38 @@
+  {
+    "id":"4eea64e6-5c87-462d-9fc5-c3fdd3a310fx",
+    "name":[
+      {
+        "languageCode":"nb",
+        "languageText":"Skipsregisterhendelser - bilag1"
+      }
+    ],
+    "description":[
+      {
+        "languageCode":"nb",
+        "languageText":"Oversikt over import/eksport av skip"
+      }
+    ],
+    "administrativeStatus": "OPEN",
+    "version": "1.0.0",
+    "versionValidFrom": "2010-01-01T15:00:00.000Z",
+    "validFrom": "2010-01-01T15:00:00.000Z",
+    "createdDate": "2010-01-01T15:00:00.000Z",
+    "createdBy":"OHV"
+    ,
+    "informationProvider":"/InformationProvider/79945ada-de3e-4742-82c0-98d908beec7b",
+    "regulation":"A",
+    "status":"DRAFT",
+    "valuation":"2",
+    "changeManagement":
+      {
+        "languageCode":"nb",
+        "languageText":"Avtalen skal gjennomgås årlig"
+      },
+    "informationSource":
+      {
+        "languageCode":"nb",
+        "languageText":"NIS/NOR/BYGG-registeret"
+      },
+    "exchangeChannel":"/ExchangeChannel/4eea64e6-5c87-462d-9fc5-c3fdd3a310fc",
+    "frequency":"Løpende"
+  }

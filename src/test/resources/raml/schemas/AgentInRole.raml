@@ -1,0 +1,30 @@
+#%RAML 1.0 Library
+uses:
+  IdentifiableArtefact: ./abstract/IdentifiableArtefact.raml
+  #Agent: Agent.raml
+  #Role: Role.raml
+
+types:
+
+  AgentInRole:
+    description: Relate Agent and Role.
+    type: IdentifiableArtefact.IdentifiableArtefact
+    properties:
+      role:
+        type: string
+        description: The role
+        displayName: Rolle
+      _link_property_role?:
+        properties:
+          Role?: nil
+
+      agents:
+        type: string[]
+        description: Agent(s) acting in the Role
+        displayName: Aktøren(e) i rollen
+      _link_property_agents?:
+        properties:
+          Agent?: nil
+
+
+    example: !include ../examples/AgentInRoleExample.json

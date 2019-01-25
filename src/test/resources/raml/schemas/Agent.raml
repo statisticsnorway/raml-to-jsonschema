@@ -1,0 +1,37 @@
+#%RAML 1.0 Library
+uses:
+  IdentifiableArtefact: ./abstract/IdentifiableArtefact.raml
+  AgentDetails: ./abstract/AgentDetails.raml
+
+types:
+
+  Agent:
+    description: Agent - an organization, induvidual or system.
+    type: IdentifiableArtefact.IdentifiableArtefact
+    properties:
+      agentType:
+        type: string
+        description: The type of agent.
+        displayName: Type aktør
+        enum:
+          - INDIVIDUAL
+          - ORGANIZATION
+          - SYSTEM
+      parentAgent?:  #TODO: Foreløpig 0..1, men det er mulig vi må utvide denne til 0..* (mulighet til å peke på flere parents)
+        type: string
+        description: A reference to the parent object (id)
+        displayName: Referanse til moder-objekt
+      isExternal:  # See http://www.ddialliance.org/Specification/DDI-Lifecycle/3.2/XMLSchema/FieldLevelDocumentation/schemas/reusable_xsd/elements/AgencyOrganizationReference.html
+        type: boolean
+        default: false  # TODO: Bør denne være true som default, hvis vi har flest eksterne aktører ser er det kanskje lurt?
+        description: Is this an external agent?
+        displayName: Er aktøren ekstern?
+      agentDetails?:
+        type: AgentDetails.AgentDetails[]
+        description: Agent details (e.g. contackt adress, email, phone, mobile ...).
+        displayName: Detaljer om aktøren
+
+      #TODO: Vi trenger noe (attributt/type?) for å skille mellom interne og eksterne aktører.
+      #TODO: Vi bør knytte interne aktører til ActiveDirectory (AD) eller tilsvarende for detaljert informajson (email, avdeling, seksjon, telefon, ...)
+
+    example: !include ../examples/AgentExample1.json
