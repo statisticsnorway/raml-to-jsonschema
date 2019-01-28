@@ -9,7 +9,7 @@ jobs:
   include:
   - stage: install
     script:
-    - mvn --settings=.maven.settings.xml clean install -B -V
+    - mvn clean install -B -V
 branches:
   only:
   - master
