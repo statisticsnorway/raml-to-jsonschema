@@ -23,8 +23,10 @@ COPY --from=build /raml-to-jsonschema/target/raml-to-jsonschema-*.jar /opt/raml-
 
 ENV PATH=/opt/jdk/bin:$PATH
 
+RUN mkdir -p /raml-project
+
 VOLUME ["/raml-project"]
 
 WORKDIR /raml-project
 
-CMD ["java", "-cp", "/opt/raml-to-jsonschema/bin/*", "no.ssb.raml.RamltoJsonSchemaConverter", "jsonschmeas/", "schemas/"]
+CMD ["java", "-cp", "/opt/raml-to-jsonschema/bin/*", "no.ssb.raml.RamltoJsonSchemaConverter", "jsonschemas/", "schemas/"]
