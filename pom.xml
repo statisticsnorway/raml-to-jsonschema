@@ -6,7 +6,11 @@
     <artifactId>raml-to-jsonschema</artifactId>
     <version>0.9-SNAPSHOT</version>
     <packaging>jar</packaging>
+
     <name>RAML to JSON Schema</name>
+    <description>RAML to JSON Schema converter</description>
+    <url>https://github.com/statisticsnorway/</url>
+    <inceptionYear>2018</inceptionYear>
 
     <properties>
         <java.version>1.8</java.version>
