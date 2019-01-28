@@ -2,6 +2,13 @@
 
 RAML to JSON Schema converts RAML Schema files to JSONSchema.
 
+# Using docker
+
+Usage: 
+
+`docker run -v JSONSCHEMAS_FOLDER:/jsonschemas -v SCHEMAS_FOLDER:/schemas -v EXAMPLES_FOLDER:/examples statisticsnorway/raml-to-jsonschema:latest` 
+
+
 ##Prerequisites
 
 This library uses ```jackson-dataformat-yaml``` which uses SnakeYAML library for low-level YAML parsing.

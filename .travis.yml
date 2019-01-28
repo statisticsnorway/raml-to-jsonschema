@@ -2,7 +2,7 @@ language: java
 notifications:
   email: false
 jdk:
-- openjdk11
+- openjdk8
 stages:
 - install
 jobs:
