@@ -1,0 +1,43 @@
+  {
+    "id":"4eea64e6-5c87-462d-9fc5-c3fdd3a310fx",
+    "name":[
+      {
+        "languageCode":"en",
+        "languageText":"Norwegian Maritime Authority - Annex1"
+      }
+    ],
+    "description":[
+      {
+        "languageCode":"en",
+        "languageText":"Overview import/export of ships"
+      }
+    ],
+    "administrativeStatus": "OPEN",
+    "version": "1.0.0",
+    "versionValidFrom": "2010-01-01T15:00:00.000Z",
+    "validFrom": "2010-01-01T15:00:00.000Z",
+    "createdDate": "2010-01-01T15:00:00.000Z",
+    "createdBy":"OHV",
+    "informationProviders":["/InformationProvider/79945ada-de3e-4742-82c0-98d908beec7b"],
+    "regulation":"VOLUNTARY",
+    "provisionAgreementStatus":"DRAFT",
+    "valuation":"B",
+    "changeManagement":[
+      {
+        "languageCode":"en",
+        "languageText":"Reviewed on a yearly basis"
+      },
+      {
+        "languageCode":"en",
+        "languageText":"Avtalen skal gjennomgås årlig"
+      }
+    ],
+    "informationSource":[
+      {
+        "languageCode":"en",
+        "languageText":"NIS/NOR/BYGG-register"
+      }
+    ],
+    "exchangeChannels":["/ExchangeChannel/4eea64e6-5c87-462d-9fc5-c3fdd3a310fc"],
+    "frequency":"ONGOING"
+  }

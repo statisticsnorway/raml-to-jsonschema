@@ -1,37 +1,42 @@
 #%RAML 1.0 Library
 uses:
+  Link: ./annotation/Link.raml
   IdentifiableArtefact: ./abstract/IdentifiableArtefact.raml
   AgentDetails: ./abstract/AgentDetails.raml
 
 types:
 
   Agent:
-    description: Agent - an organization, induvidual or system.
+    description: An actor that performs a role in relation to the statistical Business Process.
+    displayName: Agent
     type: IdentifiableArtefact.IdentifiableArtefact
+
     properties:
       agentType:
         type: string
         description: The type of agent.
-        displayName: Type aktør
+        displayName: Agent type
         enum:
           - INDIVIDUAL
           - ORGANIZATION
           - SYSTEM
-      parentAgent?:  #TODO: Foreløpig 0..1, men det er mulig vi må utvide denne til 0..* (mulighet til å peke på flere parents)
-        type: string
-        description: A reference to the parent object (id)
-        displayName: Referanse til moder-objekt
+
+      parentAgents?:
+        type: string[]
+        displayName: Parent agents
+        (Link.types): [Agent]
+
       isExternal:  # See http://www.ddialliance.org/Specification/DDI-Lifecycle/3.2/XMLSchema/FieldLevelDocumentation/schemas/reusable_xsd/elements/AgencyOrganizationReference.html
         type: boolean
-        default: false  # TODO: Bør denne være true som default, hvis vi har flest eksterne aktører ser er det kanskje lurt?
+        default: false
         description: Is this an external agent?
-        displayName: Er aktøren ekstern?
+        displayName: Is external
+
       agentDetails?:
         type: AgentDetails.AgentDetails[]
         description: Agent details (e.g. contackt adress, email, phone, mobile ...).
-        displayName: Detaljer om aktøren
+        displayName: Agent details
 
-      #TODO: Vi trenger noe (attributt/type?) for å skille mellom interne og eksterne aktører.
-      #TODO: Vi bør knytte interne aktører til ActiveDirectory (AD) eller tilsvarende for detaljert informajson (email, avdeling, seksjon, telefon, ...)
 
-    example: !include ../examples/AgentExample1.json
+
+    example: !include ../examples/_main/Agent_Department300.json

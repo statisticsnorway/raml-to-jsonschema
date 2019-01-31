@@ -199,7 +199,7 @@ public class JsonSchemaHandler {
         LinkedHashMap<Object, Object> jsonSchemaProperties = new LinkedHashMap();
         LinkedHashMap<Object, Object> schemaDefinitions = new LinkedHashMap();
         LinkedHashMap<Object, Object> types = new LinkedHashMap();
-
+        LinkedHashMap<Object, Object> resolvedJsonProperties = new LinkedHashMap();
 
         Object jsonObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonContent);
         if (jsonObject instanceof LinkedHashMap) {
@@ -241,7 +241,9 @@ public class JsonSchemaHandler {
             jsonSchemaProperties = JsonPath.read(domain, PROPERTIES_TAG);
         }
 
-        LinkedHashMap<Object, Object> resolvedJsonProperties = resolveJsonLinks(oMapper.convertValue(jsonProperties, ConcurrentHashMap.class));
+        if(jsonProperties != null){
+            resolvedJsonProperties = resolveJsonLinks(oMapper.convertValue(jsonProperties, ConcurrentHashMap.class));
+        }
 
         mergeJson(modifiedJsonSchema, jsonProperties, jsonSchemaProperties, resolvedJsonProperties, domainName);
     }

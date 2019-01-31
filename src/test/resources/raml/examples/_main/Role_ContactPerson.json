@@ -1,23 +1,23 @@
 {
-  "id": "4eea64e6-5c87-462d-9fc5-c3fdd3a310fa",
+  "id": "7d6db429-905d-4fac-bc94-f438e2367288",
   "name": [
     {
       "languageCode": "nb",
-      "languageText": "EIER"
+      "languageText": "KONTAKTPERSON"
     },
     {
       "languageCode": "en",
-      "languageText": "OWNER"
+      "languageText": "CONTACTPERSON"
     }
   ],
   "description": [
     {
       "languageCode": "nb",
-      "languageText": "Eier"
+      "languageText": "Kontakperson"
     },
     {
       "languageCode": "en",
-      "languageText": "Owner"
+      "languageText": "Contact person"
     }
   ],
   "administrativeStatus": "OPEN",
@@ -30,14 +30,6 @@
     {
       "administrativeDetailType": "DEFAULTLANGUAGE",
       "values": ["nb"]
-    },
-    {
-      "administrativeDetailType": "DOCUMENTATION",
-      "values": [
-        "www.ssb.no/document1",
-        "www.ssb.no/document2",
-        "www.ssb.no/document3"
-      ]
     }
   ]
 }
