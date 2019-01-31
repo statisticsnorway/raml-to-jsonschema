@@ -1,5 +1,6 @@
 package no.ssb.raml.jsonhandler;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
@@ -241,7 +242,7 @@ public class JsonSchemaHandler {
             jsonSchemaProperties = JsonPath.read(domain, PROPERTIES_TAG);
         }
 
-        if(jsonProperties != null){
+        if (jsonProperties != null) {
             resolvedJsonProperties = resolveJsonLinks(oMapper.convertValue(jsonProperties, ConcurrentHashMap.class));
         }
 
@@ -250,6 +251,8 @@ public class JsonSchemaHandler {
 
     private LinkedHashMap<Object, Object> resolveJsonLinks(ConcurrentHashMap<Object, Object> jsonProperties) {
         ObjectMapper oMapper = new ObjectMapper();
+
+        oMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         jsonProperties.forEach((key, value) -> {
             ConcurrentHashMap<Object, Object> propertyValues = oMapper.convertValue(value, ConcurrentHashMap.class);
