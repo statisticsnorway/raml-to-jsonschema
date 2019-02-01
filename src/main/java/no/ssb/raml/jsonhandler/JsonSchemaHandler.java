@@ -244,13 +244,13 @@ public class JsonSchemaHandler {
         }
 
         if (jsonProperties != null) {
-            resolvedJsonProperties = resolveJsonLinks(oMapper.convertValue(jsonProperties, ConcurrentHashMap.class));
+            resolvedJsonProperties = resolveJsonLinks(oMapper.convertValue(jsonProperties, ConcurrentHashMap.class), domainName);
         }
 
         mergeJson(modifiedJsonSchema, jsonProperties, jsonSchemaProperties, resolvedJsonProperties, domainName);
     }
 
-    private LinkedHashMap<Object, Object> resolveJsonLinks(ConcurrentHashMap<Object, Object> jsonProperties) {
+    private LinkedHashMap<Object, Object> resolveJsonLinks(ConcurrentHashMap<Object, Object> jsonProperties, String domainName) {
         ObjectMapper oMapper = new ObjectMapper();
         AtomicReference<ConcurrentHashMap<Object, Object>> propertyValues = new AtomicReference<>(new ConcurrentHashMap<>());
 
@@ -259,7 +259,7 @@ public class JsonSchemaHandler {
             LinkedHashMap<Object, Object> keyValues = oMapper.convertValue(value, LinkedHashMap.class);
             keyValues.forEach((k, v) -> {
                 if (v == null || v == "") {
-                    System.err.println("Property " + k + " in " + key + " is not defined!!");
+                    System.err.println("Property '" + k + "' in '" + key + "' is not defined in '"+domainName+"' !!");
                     isInvalidPropertyValue.set(true);
                 }
             });
