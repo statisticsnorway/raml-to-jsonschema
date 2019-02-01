@@ -259,10 +259,13 @@ public class JsonSchemaHandler {
             LinkedHashMap<Object, Object> keyValues = oMapper.convertValue(value, LinkedHashMap.class);
             keyValues.forEach((k, v) -> {
                 if (v == null || v == "") {
+                    keyValues.put(k, "");
                     System.err.println("Property '" + k + "' in '" + key + "' is not defined in '"+domainName+"' !!");
                     isInvalidPropertyValue.set(true);
                 }
             });
+
+            jsonProperties.put(key, keyValues);
 
             if(!isInvalidPropertyValue.get()){
                 propertyValues.set(oMapper.convertValue(value, ConcurrentHashMap.class));
