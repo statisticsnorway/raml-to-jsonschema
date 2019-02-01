@@ -252,7 +252,8 @@ public class JsonSchemaHandler {
 
     private LinkedHashMap<Object, Object> resolveJsonLinks(ConcurrentHashMap<Object, Object> jsonProperties, String domainName) {
         ObjectMapper oMapper = new ObjectMapper();
-        AtomicReference<ConcurrentHashMap<Object, Object>> propertyValues = new AtomicReference<>(new ConcurrentHashMap<>());
+        final ConcurrentHashMap<Object, Object>[] propertyValues = new ConcurrentHashMap[]{new ConcurrentHashMap<>()};
+
 
         jsonProperties.forEach((key, value) -> {
             AtomicBoolean isInvalidPropertyValue = new AtomicBoolean(false);
@@ -268,8 +269,8 @@ public class JsonSchemaHandler {
             jsonProperties.put(key, keyValues);
 
             if(!isInvalidPropertyValue.get()){
-                propertyValues.set(oMapper.convertValue(value, ConcurrentHashMap.class));
-                propertyValues.get().forEach((property, propertyValue) -> {
+                propertyValues[0] = oMapper.convertValue(value, ConcurrentHashMap.class);
+                propertyValues[0].forEach((property, propertyValue) -> {
                     LinkedHashMap<Object, Object> linkedObject = new LinkedHashMap<>();
                     if (property.equals(LINK_TAG)) {
                         LinkedHashMap<Object, Object> linkedPropertyType = new LinkedHashMap<>();
@@ -281,7 +282,7 @@ public class JsonSchemaHandler {
                             linkedObject.put("type", "object");
                             linkedObject.put("properties", linkedProperty);
                             String keyStr = "_link_property_" + key.toString().replaceAll("[?]", "");
-                            propertyValues.get().remove(property);
+                            propertyValues[0].remove(property);
                             jsonProperties.put(key, propertyValues);
                             jsonProperties.put(keyStr, linkedObject);
                         });
