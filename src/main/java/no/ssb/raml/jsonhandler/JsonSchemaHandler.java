@@ -1,6 +1,5 @@
 package no.ssb.raml.jsonhandler;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
@@ -14,6 +13,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -251,29 +252,40 @@ public class JsonSchemaHandler {
 
     private LinkedHashMap<Object, Object> resolveJsonLinks(ConcurrentHashMap<Object, Object> jsonProperties) {
         ObjectMapper oMapper = new ObjectMapper();
-
-        oMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        AtomicReference<ConcurrentHashMap<Object, Object>> propertyValues = new AtomicReference<>(new ConcurrentHashMap<>());
 
         jsonProperties.forEach((key, value) -> {
-            ConcurrentHashMap<Object, Object> propertyValues = oMapper.convertValue(value, ConcurrentHashMap.class);
-            propertyValues.forEach((property, propertyValue) -> {
-                LinkedHashMap<Object, Object> linkedObject = new LinkedHashMap<>();
-                if (property.equals(LINK_TAG)) {
-                    LinkedHashMap<Object, Object> linkedPropertyType = new LinkedHashMap<>();
-                    ArrayList<String> linkedProperties = (ArrayList) propertyValue;
-                    LinkedHashMap<Object, Object> linkedProperty = new LinkedHashMap<>();
-                    linkedProperties.forEach((linkProperty) -> {
-                        linkedPropertyType.put("type", "null");
-                        linkedProperty.put(linkProperty, linkedPropertyType);
-                        linkedObject.put("type", "object");
-                        linkedObject.put("properties", linkedProperty);
-                        String keyStr = "_link_property_" + key.toString().replaceAll("[?]", "");
-                        propertyValues.remove(property);
-                        jsonProperties.put(key, propertyValues);
-                        jsonProperties.put(keyStr, linkedObject);
-                    });
+            AtomicBoolean isInvalidPropertyValue = new AtomicBoolean(false);
+            LinkedHashMap<Object, Object> keyValues = oMapper.convertValue(value, LinkedHashMap.class);
+            keyValues.forEach((k, v) -> {
+                if (v == null || v == "") {
+                    System.err.println("Property " + k + " in " + key + " is not defined!!");
+                    isInvalidPropertyValue.set(true);
                 }
             });
+
+            if(!isInvalidPropertyValue.get()){
+                propertyValues.set(oMapper.convertValue(value, ConcurrentHashMap.class));
+                propertyValues.get().forEach((property, propertyValue) -> {
+                    LinkedHashMap<Object, Object> linkedObject = new LinkedHashMap<>();
+                    if (property.equals(LINK_TAG)) {
+                        LinkedHashMap<Object, Object> linkedPropertyType = new LinkedHashMap<>();
+                        ArrayList<String> linkedProperties = (ArrayList) propertyValue;
+                        LinkedHashMap<Object, Object> linkedProperty = new LinkedHashMap<>();
+                        linkedProperties.forEach((linkProperty) -> {
+                            linkedPropertyType.put("type", "null");
+                            linkedProperty.put(linkProperty, linkedPropertyType);
+                            linkedObject.put("type", "object");
+                            linkedObject.put("properties", linkedProperty);
+                            String keyStr = "_link_property_" + key.toString().replaceAll("[?]", "");
+                            propertyValues.get().remove(property);
+                            jsonProperties.put(key, propertyValues);
+                            jsonProperties.put(keyStr, linkedObject);
+                        });
+                    }
+                });
+
+            }
         });
 
         return oMapper.convertValue(jsonProperties, LinkedHashMap.class);
