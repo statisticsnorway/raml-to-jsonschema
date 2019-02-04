@@ -262,7 +262,7 @@ public class JsonSchemaHandler {
             keyValues.forEach((k, v) -> {
                 if (v == null || v == "") {
                     keyValues.put(k, "");
-                    System.err.println("Property '" + k + "' in '" + key + "' is not defined in '" + domainName + "' !!");
+                    System.err.println("[WARNING] Property '" + k + "' in '" + key + "' is not defined in '" + domainName + "' !!");
                     isInvalidPropertyValue.set(true);
                 }
             });
