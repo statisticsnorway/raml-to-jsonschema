@@ -1,75 +1,77 @@
 #%RAML 1.0 Library
 uses:
+  Link: ./annotation/Link.raml
   IdentifiableArtefact: ./abstract/IdentifiableArtefact.raml
-  #InformationProvider: InformationProvider.raml
   MultilingualText: ./abstract/MultilingualText.raml
-  #ExchangeChannel: ExchangeChannel.raml
 
 types:
   ProvisionAgreement:
-    description: #TODO:GSIM   The legal or other basis by which two parties agree to exchange data.
+    description: The legal or other basis by which two parties agree to exchange data.
+    displayName: Provision agreement
     type: IdentifiableArtefact.IdentifiableArtefact
+
     properties:
-      informationProvider:
-        type: string
-        displayName: Leverandør
-        description: #TODO: referanse til
-      _link_property_informationProvider?:
-        properties:
-          InformationProvider?: nil
+      informationProviders?:
+        type: string[]
+        displayName: Information providers
+        (Link.types): [InformationProvider]
 
       regulation:
         type: string
-        enum: #TODO: Hvilke kategorier har vi her???? Kanskje noen andre enn administrativeStatus
-          - F #Frivillig undersøkelse
-          - O #Oppgaveplikt undersøkelse (jfr. stl §2.2)
-          - A #Administrativt register (jfr. stl §2.2 og §3.2)
-        displayName: Hjemmelsgrunnlag
-        description: #TODO: Legalor lawful basis to collect data
-      status: #TODO:
+        description: Legal or lawful basis to collect data
+        displayName: Regulation
+        enum:
+          - VOLUNTARY
+          - MANDATORY
+          - ADMINISTRATIVE_REGISTER
+
+      provisionAgreementStatus:
         type: string
-        enum: #TODO: Hvilke kategorier har vi her???? Kanskje noen andre enn administrativeStatus
-        - DRAFT
-        - INTERNAL
-        - OPEN
-        - DEPRECATED
-        displayName: Status
-        description: Leveranseavtalens status
+        description: Provision agreement status
+        displayName: Provision Agreement Status
+        enum:
+          - DRAFT
+          - INTERNAL
+          - OPEN
+          - DEPRECATED
+
       valuation?:
         type: string
-        enum:  #TODO: Hvilke kategorier har vi her????
-          - !str 1
-          - !str 2
-          - !str 3
-          - !str 4
-          - !str 5
-        displayName: Verdivurdering
-        description: Har noe med sensivitet og bruk å gjøre. kommer fra GDPR-teamet.
+        description: Valuation description
+        displayName: Valuation
+        enum:
+          - A
+          - B
+          - C
+          - D
+          - E
+
+
       changeManagement?:
-        type: MultilingualText.MultilingualText
-        displayName: Endringshåndtering
+        type: MultilingualText.MultilingualText[]
+        displayName: Change management
         description: Change management
+
       informationSource:
-        type: MultilingualText.MultilingualText
-        displayName: Kilde
+        type: MultilingualText.MultilingualText[]
+        displayName: Information source
         description: External source
-      exchangeChannel:
-        type: string
-        displayName: Utvekslingskanal
-        description: #TODO referanse, kanskje []?
-      _link_property_exchangeChannel?:
-        properties:
-          ExchangeChannel?: nil
+
+      exchangeChannels?:
+        type: string[]
+        displayName: Exchange channels
+        (Link.types): [ExchangeChannel]
 
       frequency:
         type: string
-        enum:  #TODO: Hvilke muligheter har vi her????
-          - Løpende
-          - Daglig
-          - Ukentlig
-          - Månedlig
-          - Årlig
-        displayName: Hyppighet
         description: The time frequency at which data is collected at regular intervals.
+        displayName: Frequency
+        enum:
+          - ONGOING
+          - DAILY
+          - WEEKLY
+          - MONTHLY
+          - ANNUAL
 
-    example: !include ../examples/ProvisionAgreementExampleRef.json
+
+    example: !include ../examples/_main/ProvisionAgreement_NorwegianMaritimeAuthority.json

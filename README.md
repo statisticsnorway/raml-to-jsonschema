@@ -10,7 +10,7 @@ Usage:
 
 This will generate JSON Schemas into `jsonschemas/` folder. 
 
-##Prerequisites
+## Prerequisites
 
 This library uses ```jackson-dataformat-yaml``` which uses SnakeYAML library for low-level YAML parsing.
 
@@ -44,7 +44,7 @@ It has different ways to express a string. F.e
           }
    ```
   
-  ##Solution 
+  ## Solution 
   
   Explicitly provide the type on the elements
   ```
@@ -91,7 +91,7 @@ It has different ways to express a string. F.e
            "description" : "Har noe med sensivitet og bruk å gjøre. kommer fra GDPR-teamet."
          }
  ```
- ##Solution
+ ## Solution
  ```
    valuation?:
           type: string

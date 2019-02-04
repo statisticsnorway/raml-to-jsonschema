@@ -3,19 +3,19 @@ types:
 
   AgentDetails:
     description: A generic and expandable key-value-store for adding present and future AgentDetails-attributes to the Agent-object.
-    displayName: Detaljer om aktør
     type: object
+
     properties:
       agentDetailType:
         type: string
         description: The type (key) of the AgentDetails-attribute.
-        displayName: Aktør-detalj-type
-        enum:   # TODO: Foreløpig en enum, men bør flyttes til KLASS?
+        displayName: Agent detail type
+        enum:
           - CONTACT_EMAIL
           - CONTACT_MOBILE
           - CONTACT_PHONE
           - CONTACT_ADDRESS
       values:
-        type: array
+        type: string[]
         description: One or more values (a list) for this agentDetailType.
-        displayName: Verdi(er)
+        displayName: Values

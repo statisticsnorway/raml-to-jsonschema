@@ -3,18 +3,19 @@ types:
 
   MultilingualText:
     description: A reusable type for supporting multilingual texts.
-    displayName: Språkstøtte
     type: object
+
     properties:
       languageCode:
         type: string
         description: The language code. Use only ISO 639-1 codes.
-        displayName: Språkkode (ISO 639-1)
-        enum:  # TODO: Foreløpig en enum, men bør flyttes til KLASS?
+        displayName: Language code
+        enum:
           - nb
           - nn
           - en
+
       languageText:
         type: string
         description: The text (e.g. label, title, description)
-        displayName: Tekst
+        displayName: Language text

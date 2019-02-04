@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import net.minidev.json.JSONObject;
 import no.ssb.raml.utils.DirectoryUtils;
 
 import java.nio.file.Path;
@@ -13,6 +14,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -199,7 +202,7 @@ public class JsonSchemaHandler {
         LinkedHashMap<Object, Object> jsonSchemaProperties = new LinkedHashMap();
         LinkedHashMap<Object, Object> schemaDefinitions = new LinkedHashMap();
         LinkedHashMap<Object, Object> types = new LinkedHashMap();
-
+        LinkedHashMap<Object, Object> resolvedJsonProperties = new LinkedHashMap();
 
         Object jsonObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonContent);
         if (jsonObject instanceof LinkedHashMap) {
@@ -241,34 +244,60 @@ public class JsonSchemaHandler {
             jsonSchemaProperties = JsonPath.read(domain, PROPERTIES_TAG);
         }
 
-        LinkedHashMap<Object, Object> resolvedJsonProperties = resolveJsonLinks(oMapper.convertValue(jsonProperties, ConcurrentHashMap.class));
+        if (jsonProperties != null) {
+            resolvedJsonProperties = resolveJsonLinks(oMapper.convertValue(jsonProperties, ConcurrentHashMap.class), domainName);
+        }
 
         mergeJson(modifiedJsonSchema, jsonProperties, jsonSchemaProperties, resolvedJsonProperties, domainName);
     }
 
-    private LinkedHashMap<Object, Object> resolveJsonLinks(ConcurrentHashMap<Object, Object> jsonProperties) {
+    private LinkedHashMap<Object, Object> resolveJsonLinks(ConcurrentHashMap<Object, Object> jsonProperties, String domainName) {
         ObjectMapper oMapper = new ObjectMapper();
+        final Map<Object, Object>[] propertyValues = new ConcurrentHashMap[]{new ConcurrentHashMap<>()};
+
 
         jsonProperties.forEach((key, value) -> {
-            ConcurrentHashMap<Object, Object> propertyValues = oMapper.convertValue(value, ConcurrentHashMap.class);
-            propertyValues.forEach((property, propertyValue) -> {
-                LinkedHashMap<Object, Object> linkedObject = new LinkedHashMap<>();
-                if (property.equals(LINK_TAG)) {
-                    LinkedHashMap<Object, Object> linkedPropertyType = new LinkedHashMap<>();
-                    ArrayList<String> linkedProperties = (ArrayList) propertyValue;
-                    LinkedHashMap<Object, Object> linkedProperty = new LinkedHashMap<>();
-                    linkedProperties.forEach((linkProperty) -> {
-                        linkedPropertyType.put("type", "null");
-                        linkedProperty.put(linkProperty, linkedPropertyType);
-                        linkedObject.put("type", "object");
-                        linkedObject.put("properties", linkedProperty);
-                        String keyStr = "_link_property_" + key.toString().replaceAll("[?]", "");
-                        propertyValues.remove(property);
-                        jsonProperties.put(key, propertyValues);
-                        jsonProperties.put(keyStr, linkedObject);
-                    });
+            AtomicBoolean isInvalidPropertyValue = new AtomicBoolean(false);
+            LinkedHashMap<Object, Object> keyValues = oMapper.convertValue(value, LinkedHashMap.class);
+            keyValues.forEach((k, v) -> {
+                if (v == null || v == "") {
+                    keyValues.put(k, "");
+                    System.err.println("[WARNING] Property '" + k + "' in '" + key + "' is not defined in '" + domainName + "' !!");
+                    isInvalidPropertyValue.set(true);
                 }
             });
+
+            jsonProperties.put(key, keyValues);
+
+            if (!isInvalidPropertyValue.get()) {
+                propertyValues[0] = oMapper.convertValue(value, ConcurrentHashMap.class);
+                propertyValues[0].forEach((property, propertyValue) -> {
+                    LinkedHashMap<Object, Object> linkedObject = new LinkedHashMap<>();
+                    if (property.equals(LINK_TAG)) {
+                        LinkedHashMap<Object, Object> linkedPropertyType = new LinkedHashMap<>();
+                        ArrayList<String> linkedProperties = (ArrayList) propertyValue;
+                        LinkedHashMap<Object, Object> linkedProperty = new LinkedHashMap<>();
+                        linkedProperties.forEach((linkProperty) -> {
+                            linkedPropertyType.put("type", "null");
+                            linkedProperty.put(linkProperty, linkedPropertyType);
+                            linkedObject.put("type", "object");
+                            linkedObject.put("properties", linkedProperty);
+                            String keyStr = "_link_property_" + key.toString().replaceAll("[?]", "");
+                            propertyValues[0].remove(property);
+
+                            LinkedHashMap<Object, Object> convertedPropertyValues = new LinkedHashMap<>();
+
+                            propertyValues[0].forEach((k, v) -> {
+                                convertedPropertyValues.put(k, v);
+                            });
+
+                            jsonProperties.put(key, convertedPropertyValues);
+                            jsonProperties.put(keyStr, linkedObject);
+                        });
+                    }
+                });
+
+            }
         });
 
         return oMapper.convertValue(jsonProperties, LinkedHashMap.class);
