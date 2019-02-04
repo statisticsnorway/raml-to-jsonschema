@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import net.minidev.json.JSONObject;
 import no.ssb.raml.utils.DirectoryUtils;
 
 import java.nio.file.Path;
@@ -252,7 +253,7 @@ public class JsonSchemaHandler {
 
     private LinkedHashMap<Object, Object> resolveJsonLinks(ConcurrentHashMap<Object, Object> jsonProperties, String domainName) {
         ObjectMapper oMapper = new ObjectMapper();
-        final ConcurrentHashMap<Object, Object>[] propertyValues = new ConcurrentHashMap[]{new ConcurrentHashMap<>()};
+        final Map<Object, Object>[] propertyValues = new ConcurrentHashMap[]{new ConcurrentHashMap<>()};
 
 
         jsonProperties.forEach((key, value) -> {
@@ -261,14 +262,14 @@ public class JsonSchemaHandler {
             keyValues.forEach((k, v) -> {
                 if (v == null || v == "") {
                     keyValues.put(k, "");
-                    System.err.println("Property '" + k + "' in '" + key + "' is not defined in '"+domainName+"' !!");
+                    System.err.println("Property '" + k + "' in '" + key + "' is not defined in '" + domainName + "' !!");
                     isInvalidPropertyValue.set(true);
                 }
             });
 
             jsonProperties.put(key, keyValues);
 
-            if(!isInvalidPropertyValue.get()){
+            if (!isInvalidPropertyValue.get()) {
                 propertyValues[0] = oMapper.convertValue(value, ConcurrentHashMap.class);
                 propertyValues[0].forEach((property, propertyValue) -> {
                     LinkedHashMap<Object, Object> linkedObject = new LinkedHashMap<>();
@@ -283,7 +284,14 @@ public class JsonSchemaHandler {
                             linkedObject.put("properties", linkedProperty);
                             String keyStr = "_link_property_" + key.toString().replaceAll("[?]", "");
                             propertyValues[0].remove(property);
-                            jsonProperties.put(key, propertyValues);
+
+                            LinkedHashMap<Object, Object> convertedPropertyValues = new LinkedHashMap<>();
+
+                            propertyValues[0].forEach((k, v) -> {
+                                convertedPropertyValues.put(k, v);
+                            });
+
+                            jsonProperties.put(key, convertedPropertyValues);
                             jsonProperties.put(keyStr, linkedObject);
                         });
                     }
