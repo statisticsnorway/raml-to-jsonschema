@@ -39,9 +39,9 @@ public class JsonSchemaHandler {
 
         Object jsonSchemaDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonSchema04.getValue());
 
-        LinkedHashMap<Object, Object> jsonSchemaDocument = new LinkedHashMap();
-        LinkedHashMap<Object, Object> jsonSchemaDefinitions = new LinkedHashMap();
-        LinkedHashMap<Object, Object> sourceJsonDocument = new LinkedHashMap();
+        LinkedHashMap<Object, Object> jsonSchemaDocument = new LinkedHashMap<>();
+        LinkedHashMap<Object, Object> jsonSchemaDefinitions = new LinkedHashMap<>();
+        LinkedHashMap<Object, Object> sourceJsonDocument = new LinkedHashMap<>();
         ObjectMapper oMapper = new ObjectMapper();
         String sourceJson = "";
 
