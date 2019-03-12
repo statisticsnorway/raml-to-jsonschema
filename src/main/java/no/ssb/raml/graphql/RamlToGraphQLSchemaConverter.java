@@ -1,4 +1,4 @@
-package no.ssb.raml;
+package no.ssb.raml.graphql;
 
 import graphql.Scalars;
 import graphql.language.EnumTypeDefinition;
