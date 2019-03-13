@@ -11,9 +11,11 @@ import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaPrinter;
 import org.raml.v2.api.RamlModelBuilder;
 import org.raml.v2.api.RamlModelResult;
+import org.raml.v2.api.model.v10.api.Library;
 import org.raml.v2.api.model.v10.datamodel.ObjectTypeDeclaration;
 import org.raml.v2.api.model.v10.datamodel.TypeDeclaration;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -22,10 +24,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class RamlToGraphQLSchemaConverter {
@@ -41,9 +41,17 @@ public class RamlToGraphQLSchemaConverter {
 
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                RamlModelResult modelResult = new RamlModelBuilder().buildApi(file.toFile());
-                models.addAll(modelResult.getLibrary().types());
-                return FileVisitResult.CONTINUE;
+                try (FileReader fileReader = new FileReader(file.toFile())) {
+                    RamlModelResult modelResult = new RamlModelBuilder().buildApi(
+                            fileReader,
+                            file.toAbsolutePath().toString()
+                    );
+                    Library library = modelResult.getLibrary();
+                    if (library != null) {
+                        models.addAll(library.types());
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
             }
 
             @Override
