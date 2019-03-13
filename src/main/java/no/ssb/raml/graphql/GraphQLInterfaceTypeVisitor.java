@@ -2,36 +2,28 @@ package no.ssb.raml.graphql;
 
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLTypeReference;
 import org.raml.v2.api.model.v10.datamodel.ObjectTypeDeclaration;
 import org.raml.v2.api.model.v10.datamodel.TypeDeclaration;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 public class GraphQLInterfaceTypeVisitor extends BaseTypeDeclarationVisitor<GraphQLInterfaceType> {
 
-    private final TypeDeclarationVisitor<GraphQLOutputType> rootVisitor;
-    private final Map<String, GraphQLInterfaceType> interfaces = new LinkedHashMap<>();
+    private final TypeDeclarationVisitor<GraphQLOutputType> fieldVisitor;
 
-    public GraphQLInterfaceTypeVisitor(TypeDeclarationVisitor<GraphQLOutputType> rootVisitor) {
-        this.rootVisitor = rootVisitor;
-    }
-
-    public GraphQLInterfaceType getInterface(ObjectTypeDeclaration type) {
-        return interfaces.get(type.name());
+    public GraphQLInterfaceTypeVisitor(TypeDeclarationVisitor<GraphQLOutputType> fieldVisitor) {
+        this.fieldVisitor = fieldVisitor;
     }
 
     @Override
     public GraphQLInterfaceType visit(ObjectTypeDeclaration type) {
         GraphQLInterfaceType.Builder newInterface = GraphQLInterfaceType.newInterface();
-        newInterface.typeResolver(env -> null);
+        newInterface.typeResolver(env -> (GraphQLObjectType) env.getSchema().getType(type.name()));
         newInterface.name(type.name());
         for (TypeDeclaration property : type.properties()) {
             GraphQLFieldDefinition.Builder fieldDefinition = GraphQLFieldDefinition.newFieldDefinition();
             fieldDefinition.name(property.name());
-            GraphQLOutputType graphQLType = rootVisitor.visit(property);
+            GraphQLOutputType graphQLType = fieldVisitor.visit(property);
             fieldDefinition.type(graphQLType);
             newInterface.field(fieldDefinition);
         }

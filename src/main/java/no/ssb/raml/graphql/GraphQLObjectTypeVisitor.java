@@ -17,14 +17,14 @@ public class GraphQLObjectTypeVisitor extends BaseTypeDeclarationVisitor<GraphQL
 
     private static final Logger log = LoggerFactory.getLogger(GraphQLObjectTypeVisitor.class);
 
-    private final TypeDeclarationVisitor<GraphQLOutputType> rootVisitor;
+    private final TypeDeclarationVisitor<GraphQLOutputType> fieldVisitor;
     private final TypeDeclarationVisitor<GraphQLInterfaceType> interfaceVisitor;
-    private final Set<String> seenTypes;
+    private final Set<String> interfaces;
 
-    public GraphQLObjectTypeVisitor(TypeDeclarationVisitor<GraphQLOutputType> rootVisitor, Set<String> seenTypes) {
-        this.rootVisitor = rootVisitor;
-        this.interfaceVisitor = new GraphQLInterfaceTypeVisitor(rootVisitor);
-        this.seenTypes = seenTypes;
+    public GraphQLObjectTypeVisitor(TypeDeclarationVisitor<GraphQLOutputType> fieldVisitor, Set<String> interfaces) {
+        this.fieldVisitor = fieldVisitor;
+        this.interfaces = interfaces;
+        this.interfaceVisitor = new GraphQLInterfaceTypeVisitor(fieldVisitor);
     }
 
     @Override
@@ -33,27 +33,21 @@ public class GraphQLObjectTypeVisitor extends BaseTypeDeclarationVisitor<GraphQL
         builder.name(type.name());
 
         if (type.description() != null) {
-            builder.description(type.description().toString());
+            builder.description(type.description().value());
         }
 
         // Check interface.
         List<TypeDeclaration> parentTypes = type.parentTypes();
         if (!parentTypes.isEmpty()) {
             for (TypeDeclaration parentType : parentTypes) {
-
-                // Ignore root object type.
-                if ("object".equals(parentType.name())) {
+                String interfaceName = parentType.name();
+                if ("object".equals(interfaceName)) {
                     continue;
                 }
-
-                String typeName = parentType.name();
-                if (seenTypes.contains(typeName)) {
-                    log.debug("Already seen the interface {}, using type reference", type);
-                    builder.withInterface(GraphQLTypeReference.typeRef(typeName));
+                if (interfaces.add(interfaceName)) {
+                    builder.withInterface(interfaceVisitor.visit(parentType));
                 } else {
-                    seenTypes.add(typeName);
-                    GraphQLInterfaceType interfaceType = interfaceVisitor.visit(parentType);
-                    builder.withInterface(interfaceType);
+                    builder.withInterface(GraphQLTypeReference.typeRef(interfaceName));
                 }
             }
         }
@@ -62,7 +56,12 @@ public class GraphQLObjectTypeVisitor extends BaseTypeDeclarationVisitor<GraphQL
         for (TypeDeclaration property : type.properties()) {
             GraphQLFieldDefinition.Builder fieldDefinition = GraphQLFieldDefinition.newFieldDefinition();
             fieldDefinition.name(property.name());
-            GraphQLOutputType graphQLType = rootVisitor.visit(property);
+
+            if (property.description() != null) {
+                fieldDefinition.description(property.description().value());
+            }
+
+            GraphQLOutputType graphQLType = fieldVisitor.visit(property);
             fieldDefinition.type(graphQLType);
             builder.field(fieldDefinition);
         }
