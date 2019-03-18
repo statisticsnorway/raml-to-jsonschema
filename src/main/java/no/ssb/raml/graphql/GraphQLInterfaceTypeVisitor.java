@@ -19,10 +19,22 @@ public class GraphQLInterfaceTypeVisitor extends BaseTypeDeclarationVisitor<Grap
     public GraphQLInterfaceType visit(ObjectTypeDeclaration type) {
         GraphQLInterfaceType.Builder newInterface = GraphQLInterfaceType.newInterface();
         newInterface.typeResolver(env -> (GraphQLObjectType) env.getSchema().getType(type.name()));
+
         newInterface.name(type.name());
+
+        if (type.description() != null) {
+            newInterface.description(type.description().value());
+        }
+
+
         for (TypeDeclaration property : type.properties()) {
             GraphQLFieldDefinition.Builder fieldDefinition = GraphQLFieldDefinition.newFieldDefinition();
             fieldDefinition.name(property.name());
+
+            if (property.description() != null) {
+                fieldDefinition.description(property.description().value());
+            }
+
             GraphQLOutputType graphQLType = fieldVisitor.visit(property);
             fieldDefinition.type(graphQLType);
             newInterface.field(fieldDefinition);
