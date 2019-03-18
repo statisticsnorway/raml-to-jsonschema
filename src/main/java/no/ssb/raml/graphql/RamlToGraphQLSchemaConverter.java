@@ -66,9 +66,11 @@ public class RamlToGraphQLSchemaConverter {
         });
 
         GraphQLSchema.Builder schema = GraphQLSchema.newSchema();
-        RuntimeWiring.newRuntimeWiring().scalar(ExtendedScalars.DateTime);
-        RuntimeWiring.newRuntimeWiring().scalar(ExtendedScalars.Date);
-        RuntimeWiring.newRuntimeWiring().scalar(ExtendedScalars.Time);
+
+        RuntimeWiring.newRuntimeWiring()
+                .scalar(ExtendedScalars.DateTime)
+                .scalar(ExtendedScalars.Date)
+                .scalar(ExtendedScalars.Time);
 
         GraphQLOutputTypeVisitor visitor = new GraphQLOutputTypeVisitor();
 
@@ -102,6 +104,9 @@ public class RamlToGraphQLSchemaConverter {
         }
 
         schema.additionalTypes(types);
+        schema.additionalType(ExtendedScalars.DateTime);
+        schema.additionalType(ExtendedScalars.Date);
+        schema.additionalType(ExtendedScalars.Time);
         schema.query(query);
         System.out.println(printer.print(schema.build()));
     }
