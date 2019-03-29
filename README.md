@@ -4,11 +4,12 @@ RAML to JSON Schema converts RAML Schema files to JSONSchema.
 
 # Using docker
 
-Usage: 
+Usage:
 
-`docker run -v RAML_PROJECT_FOLDER:/raml-project statisticsnorway/raml-to-jsonschema:latest` 
+Where the volume RAML_VOLUME must contain the raml files inside a `schemas` folder. 
+The json files will be written inside the `jsonschema` folder inside the same volume.
 
-This will generate JSON Schemas into `jsonschemas/` folder. 
+`docker run -v RAML_VOLUME:/raml-project statisticsnorway/raml-to-jsonschema:latest` 
 
 ## Prerequisites
 
