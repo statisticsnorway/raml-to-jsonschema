@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import net.minidev.json.JSONObject;
 import no.ssb.raml.utils.DirectoryUtils;
 
 import java.nio.file.Path;
@@ -14,18 +13,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 public class JsonSchemaHandler {
 
     private static final String DEFINITION_TAG = "definitions";
     private static final String PROPERTIES_TAG = "properties";
     private static final String LINK_TAG = "(Link.types)";
+    public static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final static Logger logger = Logger.getLogger(JsonSchemaHandler.class.getName());
+    private static final Predicate<String> IS_ANNOTATION = Pattern.compile("\\((?:([a-zA-Z0-9]+)\\.)?([a-zA-Z0-9]+)\\)")
+            .asPredicate();
 
     /**
      * To add missing properties in JsonSchema
@@ -252,55 +254,77 @@ public class JsonSchemaHandler {
     }
 
     private LinkedHashMap<Object, Object> resolveJsonLinks(ConcurrentHashMap<Object, Object> jsonProperties, String domainName) {
-        ObjectMapper oMapper = new ObjectMapper();
-        final Map<Object, Object>[] propertyValues = new ConcurrentHashMap[]{new ConcurrentHashMap<>()};
 
+        // Hard to read, but actually simple. It adds
+        // "_link_property_parent[TargetFieldName]": {
+        //   "type": "object",
+        //   "type": null,
+        //   "properties": {  // linkedPropertyType
+        //      "[TargetTypeName]": {
+        //         "type": null
+        //      }
+        // }
+        // And remove the annotation no matter what.
 
-        jsonProperties.forEach((key, value) -> {
-            AtomicBoolean isInvalidPropertyValue = new AtomicBoolean(false);
-            LinkedHashMap<Object, Object> keyValues = oMapper.convertValue(value, LinkedHashMap.class);
-            keyValues.forEach((k, v) -> {
-                if (v == null || v == "") {
-                    keyValues.put(k, "");
-                    System.err.println("[WARNING] Property '" + k + "' in '" + key + "' is not defined in '" + domainName + "' !!");
-                    isInvalidPropertyValue.set(true);
+        // Make map typed.
+        Map<String, Object> root = (Map) jsonProperties;
+
+        for
+        (String fieldName : root.keySet()) {
+            Object fieldValue = root.get(fieldName);
+
+            // Should only get map here. Takes care of nulls as well.
+            if (!(fieldValue instanceof Map)) {
+                logger.warning(() -> String.format("[WARNING] Property '%s' of '%s' was of type %s", fieldName,
+                        domainName, fieldValue));
+                continue;
+            }
+
+            // Make map typed again.
+            Map<String, Object> fieldMap = (Map<String, Object>) fieldValue;
+            List<String> propertiesToRemove = new ArrayList<>();
+
+            for (Map.Entry<String, Object> property : fieldMap.entrySet()) {
+                String propertyName = property.getKey();
+
+                // Skip if not an annotation.
+                if (!IS_ANNOTATION.test(propertyName)) {
+                    logger.fine(() -> String.format("Property %s was not an annotation", property));
+                    continue;
                 }
-            });
 
-            jsonProperties.put(key, keyValues);
+                propertiesToRemove.add(propertyName);
 
-            if (!isInvalidPropertyValue.get()) {
-                propertyValues[0] = oMapper.convertValue(value, ConcurrentHashMap.class);
-                propertyValues[0].forEach((property, propertyValue) -> {
+                // Actual annotation processing.
+                if (LINK_TAG.equals(propertyName)) {
+
+                    LinkedHashMap<Object, Object> linkedProperty = new LinkedHashMap<>();
+                    String keyStr = "_link_property_" + fieldName.replaceAll("[?]", "");
                     LinkedHashMap<Object, Object> linkedObject = new LinkedHashMap<>();
-                    if (property.equals(LINK_TAG)) {
+                    linkedObject.put("type", "object");
+                    linkedObject.put("properties", linkedProperty);
+                    root.put(keyStr, linkedObject);
+
+                    ArrayList<String> linkedTypes = (ArrayList) property.getValue();
+                    for (String linkedType : linkedTypes) {
+
                         LinkedHashMap<Object, Object> linkedPropertyType = new LinkedHashMap<>();
-                        ArrayList<String> linkedProperties = (ArrayList) propertyValue;
-                        LinkedHashMap<Object, Object> linkedProperty = new LinkedHashMap<>();
-                        linkedProperties.forEach((linkProperty) -> {
-                            linkedPropertyType.put("type", "null");
-                            linkedProperty.put(linkProperty, linkedPropertyType);
-                            linkedObject.put("type", "object");
-                            linkedObject.put("properties", linkedProperty);
-                            String keyStr = "_link_property_" + key.toString().replaceAll("[?]", "");
-                            propertyValues[0].remove(property);
+                        linkedPropertyType.put("type", "null");
 
-                            LinkedHashMap<Object, Object> convertedPropertyValues = new LinkedHashMap<>();
-
-                            propertyValues[0].forEach((k, v) -> {
-                                convertedPropertyValues.put(k, v);
-                            });
-
-                            jsonProperties.put(key, convertedPropertyValues);
-                            jsonProperties.put(keyStr, linkedObject);
-                        });
+                        linkedProperty.put(linkedType, linkedPropertyType);
                     }
-                });
+
+                } else {
+                    logger.warning(() -> String.format("Unsupported annotation %s", property));
+                }
 
             }
-        });
 
-        return oMapper.convertValue(jsonProperties, LinkedHashMap.class);
+            // Remove the processed annotations.
+            propertiesToRemove.forEach(fieldMap::remove);
+        }
+
+        return MAPPER.convertValue(jsonProperties, LinkedHashMap.class);
     }
 
     /**
