@@ -65,7 +65,12 @@ public class RamltoJsonSchemaConverterTest {
 
         RamltoJsonSchemaConverter.convertSchemas(new String[]{outputFolder.toString(), "src/test/resources/raml/schemas"});
 
-       // assertTrue(usage.isEmpty());
+        // Check that the result does not contain unsupported annotation.
+        String paJson = DirectoryUtils.readFileContent(DirectoryUtils.resolveRelativeFolderPath(outputFolder.toString(),
+                "ProvisionAgreement.json"));
+        assertFalse(paJson.contains("unsupported"));
+
+        // assertTrue(usage.isEmpty());
         LinkedHashMap<Object, Object> jsonSchemaDocument = new LinkedHashMap();
         LinkedHashMap<Object, Object> jsonDocument = new LinkedHashMap();
 
@@ -89,8 +94,6 @@ public class RamltoJsonSchemaConverterTest {
             if(DirectoryUtils.resolveRelativeFolderPath(temporaryJsonFileFolder.toString(), "Agent.json").toFile().exists()){
                 Path plainJsonFilePath = DirectoryUtils.resolveRelativeFolderPath(temporaryJsonFileFolder.toString(), "ProvisionAgreement.json");
                 String jsonFileContent = DirectoryUtils.readFileContent(plainJsonFilePath);
-
-                assertFalse(jsonFileContent.contains("(Link.unsupported)"));
 
                 Object jsonDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonFileContent);
 
