@@ -90,6 +90,8 @@ public class RamltoJsonSchemaConverterTest {
                 Path plainJsonFilePath = DirectoryUtils.resolveRelativeFolderPath(temporaryJsonFileFolder.toString(), "ProvisionAgreement.json");
                 String jsonFileContent = DirectoryUtils.readFileContent(plainJsonFilePath);
 
+                assertFalse(jsonFileContent.contains("(Link.unsupported)"));
+
                 Object jsonDocumentObject = Configuration.defaultConfiguration().jsonProvider().parse(jsonFileContent);
 
                 if (jsonDocumentObject instanceof LinkedHashMap) {
