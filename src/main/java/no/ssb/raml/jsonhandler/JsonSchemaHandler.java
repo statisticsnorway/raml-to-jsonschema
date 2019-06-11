@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import net.minidev.json.JSONObject;
 import no.ssb.raml.utils.DirectoryUtils;
 
 import java.nio.file.Path;
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -69,6 +67,13 @@ public class JsonSchemaHandler {
 
             //merge domain level properties(Role: displayName, description etc)
             mergeDomainLevelProperties(modifiedJsonSchema, jsonSchemaDefinitions, sourceJsonDocument);
+
+            // Add the additionalProperties to all the definitions.
+            Map<String, Object> definitions = modifiedJsonSchema.read("$.definitions", Map.class);
+            for (String definitionName : definitions.keySet()) {
+                Map<String, Object> definitionObject = (Map<String, Object>) definitions.get(definitionName);
+                definitionObject.put("additionalProperties", false);
+            }
 
             //merge properties for all the domain mentioned in the uses section in raml file
             mergePropertiesFromRamlUses(modifiedJsonSchema, jsonSchemaDocument, sourceJsonDocument, jsonFilesPath);
