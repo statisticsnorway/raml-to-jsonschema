@@ -1,5 +1,6 @@
 package no.ssb.raml.graphql;
 
+import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
@@ -7,6 +8,7 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeReference;
 import org.raml.v2.api.model.v10.datamodel.ObjectTypeDeclaration;
 import org.raml.v2.api.model.v10.datamodel.TypeDeclaration;
+import org.raml.v2.api.model.v10.declarations.AnnotationRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,12 +21,14 @@ public class GraphQLObjectTypeVisitor extends BaseTypeDeclarationVisitor<GraphQL
 
     private final TypeDeclarationVisitor<GraphQLOutputType> fieldVisitor;
     private final TypeDeclarationVisitor<GraphQLInterfaceType> interfaceVisitor;
+    private final GraphQLDirectiveVisitor directiveVisitor;
     private final Set<String> interfaces;
 
     public GraphQLObjectTypeVisitor(TypeDeclarationVisitor<GraphQLOutputType> fieldVisitor, Set<String> interfaces) {
         this.fieldVisitor = fieldVisitor;
         this.interfaces = interfaces;
         this.interfaceVisitor = new GraphQLInterfaceTypeVisitor(fieldVisitor);
+        this.directiveVisitor = new GraphQLDirectiveVisitor();
     }
 
     @Override
@@ -49,6 +53,8 @@ public class GraphQLObjectTypeVisitor extends BaseTypeDeclarationVisitor<GraphQL
                 } else {
                     builder.withInterface(GraphQLTypeReference.typeRef(interfaceName));
                 }
+                // TODO: Ask for an annotation.
+                builder.withDirective(GraphQLDirective.newDirective().name("domain").build());
             }
         }
 
@@ -59,6 +65,11 @@ public class GraphQLObjectTypeVisitor extends BaseTypeDeclarationVisitor<GraphQL
 
             if (property.description() != null) {
                 fieldDefinition.description(property.description().value());
+            }
+
+            // Add simple annotations.
+            for (AnnotationRef annotation : property.annotations()) {
+                fieldDefinition.withDirective(directiveVisitor.visit(annotation.annotation()));
             }
 
             GraphQLOutputType graphQLType = fieldVisitor.visit(property);

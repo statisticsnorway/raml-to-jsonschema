@@ -74,7 +74,11 @@ public class RamlToGraphQLSchemaConverter {
 
         GraphQLOutputTypeVisitor visitor = new GraphQLOutputTypeVisitor();
 
-        SchemaPrinter printer = new SchemaPrinter();
+        SchemaPrinter printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions()
+                .includeScalarTypes(true)
+                .includeDirectives(true)
+                .includeExtendedScalarTypes(true)
+        );
 
         GraphQLObjectType.Builder query = GraphQLObjectType.newObject().name("Query");
 
@@ -98,7 +102,7 @@ public class RamlToGraphQLSchemaConverter {
             GraphQLOutputType type = visitor.visit(typeDeclaration);
             types.add(type);
             query.field(GraphQLFieldDefinition.newFieldDefinition()
-                    .name("Get" + type.getName())
+                    .name(type.getName() + "ById")
                     .type(GraphQLList.list(type))
                     .build());
         }
