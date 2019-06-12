@@ -4,7 +4,7 @@
 
     <groupId>no.ssb.raml</groupId>
     <artifactId>raml-to-jsonschema</artifactId>
-    <version>0.14</version>
+    <version>0.15-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>RAML to JSON Schema</name>
@@ -51,7 +51,7 @@
         <connection>scm:git:git://github.com/statisticsnorway/raml-to-jsonschema.git</connection>
         <developerConnection>scm:git:git@github.com:statisticsnorway/raml-to-jsonschema.git</developerConnection>
         <url>https://github.com/statisticsnorway/raml-to-jsonschema/tree/master</url>
-        <tag>v0.14</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>
