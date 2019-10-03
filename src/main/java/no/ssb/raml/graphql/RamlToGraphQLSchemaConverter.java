@@ -1,22 +1,18 @@
 package no.ssb.raml.graphql;
 
+import graphql.introspection.Introspection;
 import graphql.scalars.ExtendedScalars;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
+import graphql.schema.*;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaPrinter;
+import no.ssb.raml.utils.DirectoryUtils;
 import org.raml.v2.api.RamlModelBuilder;
 import org.raml.v2.api.RamlModelResult;
 import org.raml.v2.api.model.v10.api.Library;
 import org.raml.v2.api.model.v10.datamodel.ObjectTypeDeclaration;
 import org.raml.v2.api.model.v10.datamodel.TypeDeclaration;
 
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -28,10 +24,28 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static no.ssb.raml.utils.DirectoryUtils.resolveRelativeFilePath;
+
 public class RamlToGraphQLSchemaConverter {
 
+    private static String printUsage() {
+        return String.format("Usage: java raml-to-jsonschema.jar OUTFOLDER FILE|FOLDER [FILE|FOLDER]...%n"
+                + "Convert all raml FILE(s) and all raml files in FOLDER(s) to JSON Schema and put in OUTFOLDER" +
+                ".%n%n");
+    }
+
     public static void main(String[] args) throws IOException {
-        Path root = Paths.get("/home/hadrien/Projects/SSB/gsim-raml-schema/schemas/");
+        String output = convertToGraphQLSchema(args);
+        System.out.println(output);
+    }
+
+    public static String convertToGraphQLSchema(String[] args) throws IOException {
+
+        if(args.length < 2){
+            return printUsage();
+        }
+
+        Path root = Paths.get("/Users/rupinderkaur/Projects/ssb/gsim-raml-schema/schemas/");
         List<TypeDeclaration> models = new ArrayList<>();
         Files.walkFileTree(root, new FileVisitor<Path>() {
             @Override
@@ -107,12 +121,28 @@ public class RamlToGraphQLSchemaConverter {
                     .build());
         }
 
+        schema.additionalDirective(GraphQLDirective.newDirective()
+                .name("domain")
+                .validLocation(Introspection.DirectiveLocation.OBJECT)
+                .build()).additionalDirective(GraphQLDirective.newDirective()
+                .name("link")
+                .validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION)
+                .build());
+
         schema.additionalTypes(types);
         schema.additionalType(ExtendedScalars.DateTime);
         schema.additionalType(ExtendedScalars.Date);
         schema.additionalType(ExtendedScalars.Time);
         schema.query(query);
         System.out.println(printer.print(schema.build()));
+
+        DirectoryUtils.createFolder(resolveRelativeFilePath("graphQLSchemas"));
+
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(Paths.get("graphQLSchemas/schema.graphql").toFile()), "utf-8"))) {
+            writer.write(printer.print(schema.build()));
+        }
+        return printer.print(schema.build());
     }
 
 
