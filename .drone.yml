@@ -1,0 +1,66 @@
+kind: pipeline
+name: raml-to-jsonschema
+
+steps:
+  - name: authenticate
+    image: robertstettner/drone-mvn-auth
+    pull: always
+    settings:
+      servers:
+        from_secret: maven_servers
+
+  - name: build
+    image: maven:3.6.0-jdk-8-slim
+    commands:
+      - mvn compile -P ssb-bip --update-snapshots -DskipTests=true -Dmaven.javadoc.skip=true --batch-mode --global-settings settings.xml
+    when:
+      event:
+        - pull_request
+        - push
+
+  - name: test
+    image: maven:3.6.0-jdk-8-slim
+    commands:
+      - mvn test -P ssb-bip --update-snapshots --batch-mode --global-settings settings.xml
+    when:
+      event:
+        - pull_request
+        - push
+
+  - name: publish-maven
+    image: maven:3.6.0-jdk-8-slim
+    commands:
+      - mvn clean deploy -P ssb-bip, -DskipTests=true --batch-mode --global-settings settings.xml
+    when:
+      branch:
+        - master
+      event:
+        - push
+
+  - name: slack
+    image: plugins/slack
+    settings:
+      webhook:
+        from_secret: slack_webhook_url
+#      channel: bip-ci-test -- Choosing channel is not enabled yet
+    when:
+      status: [ success, failure ]
+
+trigger:
+  ref:
+    - refs/heads/master
+    - refs/pull/*/head
+
+---
+kind: secret
+name: slack_webhook_url
+get:
+  path: drone-slack-webhook-url
+  name: slack-webhook-url
+
+---
+kind: secret
+name: maven_servers
+get:
+  path: drone-maven-servers
+  name: ssb-bip-maven-servers
