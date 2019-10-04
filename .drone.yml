@@ -32,9 +32,8 @@ steps:
     commands:
       - mvn clean deploy -P ssb-bip, -DskipTests=true --batch-mode --global-settings settings.xml
     when:
-      branch:
-        - master
       event:
+        - pull_request
         - push
 
   - name: slack
