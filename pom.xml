@@ -54,6 +54,24 @@
         <tag>HEAD</tag>
     </scm>
 
+    <profiles>
+        <profile>
+            <id>ssb-bip</id>
+            <distributionManagement>
+                <repository>
+                    <id>ssb-bip-releases</id>
+                    <name>SSB Nexus Releases</name>
+                    <url>https://nexus.prod-bip-ci.ssb.no/repository/maven-releases/</url>
+                </repository>
+                <snapshotRepository>
+                    <id>ssb-bip-snapshots</id>
+                    <name>SSB Snapshot Repository</name>
+                    <url>https://nexus.prod-bip-ci.ssb.no/repository/maven-snapshots/</url>
+                </snapshotRepository>
+            </distributionManagement>
+        </profile>
+    </profiles>
+
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
