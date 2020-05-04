@@ -22,16 +22,12 @@
     "regulation":"VOLUNTARY",
     "provisionAgreementStatus":"DRAFT",
     "valuation":"B",
-    "changeManagement":[
+    "changeManagement":
       {
-        "languageCode":"en",
-        "languageText":"Reviewed on a yearly basis"
-      },
-      {
-        "languageCode":"en",
-        "languageText":"Avtalen skal gjennomgås årlig"
+        "language":"en",
+        "text":"Reviewed on a yearly basis"
       }
-    ],
+    ,
     "informationSource":[
       {
         "languageCode":"en",

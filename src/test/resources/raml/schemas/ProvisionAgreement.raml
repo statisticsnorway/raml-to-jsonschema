@@ -48,9 +48,14 @@ types:
 
 
       changeManagement?:
-        type: MultilingualText.MultilingualText[]
+        type: object
         displayName: Change management
         description: Change management
+        properties:
+          language:
+            type: string
+          text:
+            type: string
 
       informationSource:
         type: MultilingualText.MultilingualText[]
