@@ -17,7 +17,7 @@
         <module.build.sourceEncoding>UTF-8</module.build.sourceEncoding>
 
         <raml-parser-2.version>1.0.48</raml-parser-2.version>
-        <snakeyaml.version>1.23</snakeyaml.version>
+        <snakeyaml.version>1.26</snakeyaml.version>
         <jackson.version>2.10.1</jackson.version>
         <json-path.version>2.4.0</json-path.version>
         <logback.version>1.2.3</logback.version>
